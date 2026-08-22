@@ -7,7 +7,7 @@
   },
   "scripts": {
     "prepare:market": "node scripts/prepare-market.mjs",
-    "build": "node scripts/prepare-market.mjs && astro build && node scripts/copy-cf-files.mjs && node scripts/url_parity.mjs && node scripts/bleed.mjs && node scripts/no-placeholder.mjs",
+    "build": "node scripts/prepare-market.mjs && astro build && node scripts/flatten-issue-pages.mjs && node scripts/copy-cf-files.mjs && node scripts/url_parity.mjs && node scripts/bleed.mjs && node scripts/no-placeholder.mjs && node scripts/test-issues.mjs",
     "build:alexandria": "MARKET=alexandria npm run build",
     "build:newport": "MARKET=newport npm run build",
     "build:wasatch": "MARKET=wasatch npm run build",
@@ -32,7 +32,8 @@
     "preview:wasatch:c": "DESIGN=c MARKET=wasatch astro preview --port 4323",
     "parity": "node scripts/url_parity.mjs",
     "bleed": "node scripts/bleed.mjs",
-    "no-placeholder": "node scripts/no-placeholder.mjs"
+    "no-placeholder": "node scripts/no-placeholder.mjs",
+    "test:issues": "node scripts/test-issues.mjs"
   },
   "dependencies": {
     "astro": "^5.13.2"

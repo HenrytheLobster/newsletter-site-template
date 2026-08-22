@@ -75,9 +75,11 @@ Each `build` run:
 1. Copies that market's markdown from `newsletter-platform/markets/<id>/content/*.md` (read-only).
 2. Copies pass-through static files from the live site repo (issues, images, legacy guides, `_redirects`, `.assetsignore`).
 3. Builds Astro into `dist/<id>-<design>/`.
-4. Diffs live-repo URLs against dist (`scripts/url_parity.mjs`) — **fails on any missing path**.
-5. Scans dist for another market's name, domain, GA id, or Kit uid (`scripts/bleed.mjs`).
-6. Scans rendered pages for lorem / placeholder / fabricated event copy (`scripts/no-placeholder.mjs`).
+4. Flattens issue pages so `/issues/latest.html` and `/issues/<date>.html` are files, not directories (`scripts/flatten-issue-pages.mjs`).
+5. Diffs live-repo URLs against dist (`scripts/url_parity.mjs`) — **fails on any missing path**.
+6. Scans dist for another market's name, domain, GA id, or Kit uid (`scripts/bleed.mjs`).
+7. Scans rendered pages for lorem / placeholder / fabricated event copy (`scripts/no-placeholder.mjs`).
+8. Asserts issue pages sit in the site shell, keep real issue text, do not duplicate `<html>`/`<head>`/`<body>` or the analytics tag, and that issue CSS cannot leak (`scripts/test-issues.mjs`).
 
 ## Config shape
 
@@ -123,11 +125,12 @@ into the site repo as `events.json`:
 - `/`, `/subscribe`
 - markdown roundups at `/{guidesBasePath}/{slug}`
 - a guide index at `/{guidesBasePath}/` (new URL; existing slugs unchanged)
+- issue pages at `/issues/`, `/issues/latest.html`, `/issues/<date>.html` (site header/nav/footer around the email body; `.html` URLs unchanged)
 - `sitemap.xml`, `robots.txt`
 
 **Passed through unchanged** (so their URLs survive)
 
-- `issues/*.html`, `issues/latest.html`, `issues/index.html`, `issues/manifest.json`
+- `issues/manifest.json`
 - legacy gated guides (`guide.html`, images, `guide-gate.css/js`)
 - `images/`
 - `_redirects`, `.assetsignore`

@@ -1,6 +1,10 @@
 /**
  * Read issue archive + optional events feed from the site-repo files
- * copied into public/ by prepare-market. Never invent events.
+ * copied by prepare-market. Never invent events.
+ *
+ * Dated issue HTML and latest.html land in src/generated/issues/ (not
+ * public/) so Astro can wrap them in the site layout instead of
+ * passing the email document through verbatim.
  *
  * Events live in the platform at markets/<id>/state/curated.json, which a
  * Cloudflare build cannot see. A site-repo `events.json` is the export this
@@ -10,6 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parseIsoDate } from "./calendar.js";
+import { extractIssueDocument } from "./issue-html.js";
 
 const MONTH_INDEX = {
   january: 1,
@@ -28,6 +33,16 @@ const MONTH_INDEX = {
 
 function publicPath(...parts) {
   return path.resolve("public", ...parts);
+}
+
+export function generatedIssuesDir() {
+  return path.resolve("src", "generated", "issues");
+}
+
+function issuesSourceDir() {
+  const generated = generatedIssuesDir();
+  if (fs.existsSync(generated)) return generated;
+  return publicPath("issues");
 }
 
 function decodeEntities(text) {
@@ -138,8 +153,44 @@ function firstParagraphAfter(html, index) {
  * Pull titled items from the latest issue HTML that already ships in the
  * site repo. h3 headings and list-item links only — not every inline link.
  */
+export function listIssueHtmlFiles() {
+  const dir = issuesSourceDir();
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter(
+      (name) =>
+        name.endsWith(".html") &&
+        name !== "index.html" &&
+        !name.startsWith(".")
+    )
+    .sort();
+}
+
+export function loadIssuePage(filename) {
+  const dir = issuesSourceDir();
+  const file = path.join(dir, filename);
+  if (!fs.existsSync(file)) return null;
+  let html = "";
+  try {
+    html = fs.readFileSync(file, "utf8");
+  } catch {
+    return extractIssueDocument("", { filename });
+  }
+  const extracted = extractIssueDocument(html, { filename });
+  const fromManifest = loadIssueManifest().find((item) => item.file === filename);
+  return {
+    filename,
+    href: `/issues/${filename}`,
+    date: fromManifest?.date || filename.replace(/\.html$/i, ""),
+    ...extracted,
+    title: extracted.title || fromManifest?.subject || fromManifest?.title || filename,
+    description: extracted.description || fromManifest?.subject || "",
+  };
+}
+
 export function parseLatestIssuePicks(issueDate) {
-  const file = publicPath("issues", "latest.html");
+  const file = path.join(issuesSourceDir(), "latest.html");
   if (!fs.existsSync(file)) return [];
   const html = fs.readFileSync(file, "utf8");
   const year = parseIsoDate(issueDate)?.year || Number(String(issueDate).slice(0, 4));

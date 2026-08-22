@@ -1,0 +1,39 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getMarket } from "../../lib/market.js";
+import { loadIssueManifest } from "../../lib/issues.js";
+import { formatDate } from "../../lib/guides.js";
+
+const market = getMarket();
+const issues = loadIssueManifest();
+---
+
+<BaseLayout
+  title={`Past issues — ${market.name}`}
+  description={`The ${market.name} archive.`}
+  canonicalPath="/issues/"
+>
+  <div class="wrap issue-archive" id="page-title">
+    <p class="eyebrow">{market.name} archive</p>
+    <h1>Past issues</h1>
+    <p class="dek">
+      Every weekly email, newest first.
+      {" "}
+      <a href="/issues/latest.html">This week's issue</a>
+    </p>
+    {
+      issues.length === 0 ? (
+        <p>No issues in the archive yet.</p>
+      ) : (
+        <ul class="issue-list">
+          {issues.map((issue) => (
+            <li>
+              <a href={issue.href}>{issue.title}</a>
+              <span class="issue-date">{formatDate(issue.date) || issue.date}</span>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</BaseLayout>

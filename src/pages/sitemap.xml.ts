@@ -3,6 +3,7 @@ import path from "node:path";
 import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
 import { getMarket, guidePath, guidesIndexPath, siteUrl } from "../lib/market.js";
+import { loadIssueManifest } from "../lib/issues.js";
 
 export const GET: APIRoute = async () => {
   const market = getMarket();
@@ -16,6 +17,10 @@ export const GET: APIRoute = async () => {
     `${origin}/issues`,
     `${origin}/issues/latest.html`,
   ]);
+
+  for (const issue of loadIssueManifest()) {
+    urls.add(`${origin}${issue.href.startsWith("/") ? issue.href : `/${issue.href}`}`);
+  }
 
   for (const g of guides) {
     urls.add(`${origin}${guidePath(market, g.data.slug)}`);

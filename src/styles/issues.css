@@ -1,0 +1,74 @@
+/* Issue pages: archive list + email canvas isolation. */
+
+.issue-page {
+  padding: 8px 0 24px;
+}
+
+.issue-archive {
+  padding: 8px 0 64px;
+}
+
+.issue-list {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+}
+
+.issue-list li {
+  display: grid;
+  gap: 4px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line, rgba(11, 45, 71, 0.12));
+}
+
+.issue-list a {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.issue-date {
+  color: var(--muted, #4d6670);
+  font-family: var(--font-ui, Arial, Helvetica, sans-serif);
+  font-size: 13px;
+}
+
+/*
+  Site designs style `body.d-* h1` and `body.d-* a` globally. Revert those
+  element rules inside the email canvas so the issue's inline styles (and
+  any scoped <style>) own the look. Specificity beats body.d-* h1 (0,1,2).
+  Issue CSS is prefixed `html body .issue-body.issue-body …` so it still
+  wins over this revert.
+*/
+body.d-a .issue-body :is(
+    h1, h2, h3, h4, h5, h6, p, ul, ol, li, a, table, thead, tbody, tfoot,
+    tr, td, th, img, div, span, strong, em, blockquote, section, article
+  ),
+body.d-b .issue-body :is(
+    h1, h2, h3, h4, h5, h6, p, ul, ol, li, a, table, thead, tbody, tfoot,
+    tr, td, th, img, div, span, strong, em, blockquote, section, article
+  ),
+body.d-c .issue-body :is(
+    h1, h2, h3, h4, h5, h6, p, ul, ol, li, a, table, thead, tbody, tfoot,
+    tr, td, th, img, div, span, strong, em, blockquote, section, article
+  ) {
+  all: revert;
+}
+
+body.d-a .issue-body a:hover,
+body.d-a .issue-body a:focus-visible,
+body.d-b .issue-body a:hover,
+body.d-b .issue-body a:focus-visible,
+body.d-c .issue-body a:hover,
+body.d-c .issue-body a:focus-visible {
+  all: revert;
+}
+
+.issue-body {
+  overflow-x: auto;
+}
+
+.issue-body img {
+  max-width: none;
+  height: auto;
+  display: inline;
+}

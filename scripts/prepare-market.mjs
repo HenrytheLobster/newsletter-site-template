@@ -69,6 +69,7 @@ function main() {
   emptyDir(contentDest);
   emptyDir(pub);
   ensureDir(generatedDir());
+  emptyDir(path.join(generatedDir(), "issues"));
 
   if (!fs.existsSync(market.contentDir)) {
     throw new Error(`Content dir missing: ${market.contentDir}`);
@@ -92,12 +93,25 @@ function main() {
     const src = path.join(market.siteRepo, rel);
     const dest = path.join(pub, rel);
     const underIssues = rel === "issues" || rel.startsWith("issues/");
+    // Issue HTML is wrapped by Astro, so it must not land in public/
+    // as a pass-through document. Archive index is rendered from the
+    // manifest. Dated files + latest.html go to src/generated/issues/.
+    if (underIssues && rel.endsWith(".html")) {
+      if (rel === "issues/index.html") {
+        copied.push(rel);
+        continue;
+      }
+      copyFile(src, path.join(generatedDir(), rel), { rewrite: null });
+      copied.push(rel);
+      continue;
+    }
     copyFile(src, dest, { rewrite: underIssues ? null : market });
     copied.push(rel);
   }
 
   const passthroughHtml = copied
     .filter((rel) => rel.endsWith(".html"))
+    .filter((rel) => !rel.startsWith("issues/"))
     .map(fileToUrl)
     .sort();
 

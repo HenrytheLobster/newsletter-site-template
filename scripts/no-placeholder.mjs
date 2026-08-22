@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * A design must not ship placeholder, lorem, or fabricated event copy.
- * Scans Astro-rendered HTML (home, subscribe, guide index, markdown guides),
- * not pass-through issue HTML.
+ * Scans Astro-rendered HTML (home, subscribe, guide index, markdown guides,
+ * issue archive). Dated issue files are the published newsletter and are
+ * not scanned for placeholder event copy.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -38,7 +39,11 @@ function stripNoise(html) {
 }
 
 function astroPages(dist, market) {
-  const pages = ["index.html", path.join("subscribe", "index.html")];
+  const pages = [
+    "index.html",
+    path.join("subscribe", "index.html"),
+    path.join("issues", "index.html"),
+  ];
   const guideIndex = path.join(market.guidesBasePath, "index.html");
   pages.push(guideIndex);
   const guidesDir = path.join(dist, market.guidesBasePath);

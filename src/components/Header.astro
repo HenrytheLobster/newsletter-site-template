@@ -18,7 +18,14 @@ const links = [
 function isCurrent(href: string) {
   if (href === "/") return current === "/";
   if (current === href) return true;
-  if (href.endsWith("/") && current.startsWith(href)) return true;
+  if (href === "/issues/") {
+    if (current === "/issues" || current === "/issues/") return true;
+    return (
+      current.startsWith("/issues/") &&
+      current.endsWith(".html") &&
+      !current.endsWith("/latest.html")
+    );
+  }
   const guidesBase = guidesHref.replace(/\/$/, "");
   if (href === guidesBase && (current === guidesBase || current.startsWith(guidesBase + "/"))) {
     return true;

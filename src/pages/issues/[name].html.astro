@@ -1,0 +1,38 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { listIssueHtmlFiles, loadIssuePage } from "../../lib/issues.js";
+import { issueBodyClass } from "../../lib/issue-html.js";
+
+export function getStaticPaths() {
+  return listIssueHtmlFiles().map((filename) => ({
+    params: { name: filename.replace(/\.html$/i, "") },
+    props: { filename },
+  }));
+}
+
+const { filename } = Astro.props;
+const issue = loadIssuePage(filename) || {
+  title: filename,
+  description: "",
+  bodyStyle: "",
+  bodyClass: "",
+  scopedCss: "",
+  content: "<p>This issue could not be read.</p>",
+};
+
+const canonicalPath = `/issues/${filename}`;
+const bodyClass = issueBodyClass(issue.bodyClass);
+---
+
+<BaseLayout
+  title={issue.title}
+  description={issue.description}
+  canonicalPath={canonicalPath}
+>
+  <main class="issue-page">
+    <article class={bodyClass} id="page-title" style={issue.bodyStyle || undefined}>
+      {issue.scopedCss ? <style is:inline set:html={issue.scopedCss} /> : null}
+      <Fragment set:html={issue.content} />
+    </article>
+  </main>
+</BaseLayout>

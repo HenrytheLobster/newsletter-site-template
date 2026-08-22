@@ -1,123 +1,123 @@
-# Phase 2 report — three homepage directions
+# Issue pages in the site shell
 
 Extends the template. Writes only in `/Volumes/SSD/Projects/newsletter-site-template`.
 No git push. Live site repos, platform, schedule-tool, social-poster, and the
 old forks were not written to.
 
-Built 2026-08-22.
+Built 2026-08-22. Design C remains the default. A and B still build and share
+the same issue treatment.
 
-## The three directions
+## What counts as "the content"
 
-| DESIGN | Direction | Optimises for | Structure in one line |
-|---|---|---|---|
-| **A** | Conversion-first (Hustle-shaped) | Capture the email, then scan | Slim sans header → headline + Kit form above the fold → one featured guide with photo → tight dated lists → image grid → dark lead-magnet promo (real Kit uid) → grouped roundups each ending in “See more” → dark footer |
-| **B** | Local magazine (Scoop-shaped) | Browse like a paper | Full-bleed masthead bar → serif wordmark → editorial rows with right-hand thumbs → month grid + dated listings → email signup well → dense utility footer |
-| **C** | Hybrid | Keep the owner’s feel, steal the useful bits | Ivory/navy/Georgia pill nav → Kit form in the hero → featured guide → this-week listings + calendar → guide tiles → navy promo |
+Read several real files before deciding:
 
-Distinct on purpose: A is sans, rust, square, conversion-stacked. B is newsprint, wine masthead, serif, dense rows. C is the live-site palette and type with Hustle’s signup discipline and Scoop’s calendar.
+- `newsletter-sites/novathisweek-site/issues/latest.html` and dated files
+- the same paths in newport and wasatch
+- an older dated file (`2026-06-20.html`) that still has GA in `<head>`
+- `issues/index.html` (the archive listing, not an email)
+- the platform writer: `newsletter-platform/src/newsletter_engine/email_render.py`
+  (`wrap_newsletter_html`) and `publish.py` (writes that body to
+  `issues/<date>.html` and `issues/latest.html`)
 
-Not clones. Hustle orange/black and Scoop’s teal masthead were not copied. Wording is from market config, issue manifests, and live guide titles.
+**Dated issues and `latest.html` are complete email documents.** The publish
+job writes the same HTML the email uses: `<html>`, `<head>` (title, sometimes
+GA and Open Graph), `<body>` with inline styles, a hidden preheader `div`,
+then a table canvas (navy subject banner, cards, subscribe pill, tiny footer).
+There is no inner "content" wrapper the job reliably emits — no
+`.issue-body`, no `#content`. The inner HTML of `<body>` *is* the issue.
 
-## Preview commands (one per design per market)
+So the extractor takes:
 
-```bash
-cd /Volumes/SSD/Projects/newsletter-site-template
+1. `<body>` innerHTML
+2. minus `<script>` (old issues embed gtag in `<head>`; those must not ride
+   into the site page)
+3. minus `<style>` (pulled out and scoped — see below)
+4. minus the hidden preheader (`mso-hide:all` / `display:none` + `max-height:0`)
+5. the body's inline `style` copied onto the wrapper so the ivory canvas
+   survives without a second `<body>`
 
-# A
-DESIGN=a MARKET=alexandria npm run build && DESIGN=a MARKET=alexandria npm run preview:alexandria   # :4321
-DESIGN=a MARKET=newport    npm run build && DESIGN=a MARKET=newport    npm run preview:newport      # :4322
-DESIGN=a MARKET=wasatch    npm run build && DESIGN=a MARKET=wasatch    npm run preview:wasatch      # :4323
+The navy banner, cards, and email footer stay. That is what the reader
+already knows as the issue, sitting under the site header.
 
-# B
-DESIGN=b MARKET=alexandria npm run build && DESIGN=b MARKET=alexandria npm run preview:alexandria
-DESIGN=b MARKET=newport    npm run build && DESIGN=b MARKET=newport    npm run preview:newport
-DESIGN=b MARKET=wasatch    npm run build && DESIGN=b MARKET=wasatch    npm run preview:wasatch
+**`issues/index.html` is not an email.** It is a listing with its own `.nav`
+and unscoped `body`/`h1` CSS. Dropping that document into the site layout
+would double the nav and leak CSS. The archive page is rendered from
+`issues/manifest.json` (the same list publish already maintains) through the
+design C (or A/B) layout.
 
-# C (also the default if DESIGN is unset)
-DESIGN=c MARKET=alexandria npm run build && DESIGN=c MARKET=alexandria npm run preview:alexandria
-DESIGN=c MARKET=newport    npm run build && DESIGN=c MARKET=newport    npm run preview:newport
-DESIGN=c MARKET=wasatch    npm run build && DESIGN=c MARKET=wasatch    npm run preview:wasatch
-```
+## Issue CSS, and how it cannot leak
 
-Dist is `dist/<market>-<design>/`. After a build, `npm run preview:alexandria:a` (etc.) is a shorthand.
+Current dated/`latest` files have **no `<style>` blocks** — all presentation
+is inline. Only the old archive `index.html` has a `<style>`. Future issues
+might grow a stylesheet, so every extracted `<style>` is still scoped.
 
-He is choosing a direction, not proofreading. Look at alexandria A/B/C on a phone-width window first.
+`src/lib/scope-css.js` prefixes every selector with
+`html body .issue-body.issue-body`. `html` / `body` / `:root` become that
+host. `@media` / `@supports` inner rules are scoped; `@font-face` /
+`@keyframes` stay as-is (they have no element selectors).
 
-## Headline
+That prefix beats `body.d-c h1` and `body.d-c a` from the design sheets.
+`src/styles/issues.css` then `all: revert`s site element rules inside
+`.issue-body` so the email's inline styles own the look.
 
-`src/config/markets.js` → `home.headline`. One string per market, used by all three designs.
+Proof is in `scripts/test-issues.mjs`:
 
-Factual defaults (replace these):
+- A fixture sheet `body { background: red } .masthead, footer { display: none }`
+  becomes only host-prefixed selectors. `cssLeaksFromIssue()` fails the build
+  if any remaining selector does not contain `.issue-body`.
+- The same fixture run through `extractIssueDocument` keeps "Slightly
+  different markup", drops `<script>` / `<html>` / `<head>` / `<body>`, and
+  emits leak-free CSS.
+- Dist pages: one `<html>`, one `<head>`, one `<body>`, one gtag snippet.
 
-| Market | Default |
-|---|---|
-| alexandria | A weekly email of things to do around Northern Virginia. |
-| newport | A weekly email of things to do in Newport News. |
-| wasatch | A weekly email of things to do along the Wasatch Front. |
+## How a brand-new issue file flows through
 
-## What data direction B needs that does not exist yet
+The platform `publish` job still writes `issues/<date>.html`, rewrites
+`latest.html` / `index.html` / `manifest.json` in the site repo. This
+template does not run that job.
 
-**A live event calendar with venue and time.**
+On the next template build:
 
-Events today live in `newsletter-platform/markets/<id>/state/curated.json`. A Cloudflare Pages build of a site repo cannot see that file.
+1. `prepare-market` copies every `issues/*.html` except `index.html` into
+   `src/generated/issues/` (not `public/`, so Astro does not emit a second
+   document). `manifest.json` still goes to `public/issues/`.
+2. `src/pages/issues/[name].html.astro` `getStaticPaths` lists whatever is
+   in that generated dir. A file it has never seen becomes a page with no
+   code change.
+3. After `astro build`, `flatten-issue-pages.mjs` turns
+   `issues/latest.html/index.html` into the file `issues/latest.html` so the
+   indexed URL shape is unchanged.
+4. If the markup is slightly different (no `<body>`, extra wrapper, a
+   `<style>`, missing title), the extractor degrades to readable markup
+   instead of throwing.
 
-The site repos have **no** `events.json`. So B does not fabricate events and does not fill the month grid with placeholders.
+## Awkward markup
 
-Until an export exists, B (and C’s calendar) are driven from **this week's issue**:
+- Email tables with nested `<div>` cards and **invalid** `<p>…<ul>…</ul></p>`.
+  Left alone; cleaning it would restyle the issue.
+- Hidden preheader padded with `&zwnj;` for inbox preview. Stripped from the
+  body; the text is used as the meta description when the file has no
+  `<meta name="description">`, with the zwnj padding removed.
+- Older dated files include GA in `<head>` plus Open Graph. Scripts are
+  dropped so the site layout's tag is the only one. Title / description are
+  reused.
+- `issues/index.html` ships its own nav and `body { … }` CSS. Not used as
+  a document; the manifest is the source of truth for the archive list.
+- Astro `build.format: "directory"` would have turned `/issues/latest.html`
+  into a directory. Flattening is required to keep the file URL. The route
+  file cannot be named `[file].html.astro` — Astro's `$$file` collides;
+  it is `[name].html.astro`.
 
-- `issues/manifest.json` — real issue titles and dates
-- `issues/latest.html` — real h3 / list-item titles already published
+## Tests (green)
 
-Empty calendar cells stay empty. Marked days are issue-publish days and days named in the latest issue (`Thursday, August 20`, etc.).
-
-To get Scoop-style dated rows with venue + time, put this in the **site repo** as `events.json` (copied at prepare time):
-
-```json
-[
-  {
-    "title": "…from curated.json…",
-    "date": "2026-08-22",
-    "venue": "…",
-    "time": "7:00 PM",
-    "url": "https://…"
-  }
-]
-```
-
-That export is a prerequisite. This template will not copy `curated.json` from the platform at build time, because production Cloudflare would not have it.
-
-Scoop’s signup asks for email **and city**. Kit forms here are email-only. B does not invent a city field that would not submit.
-
-## Tests (3 × 3, all green)
-
-`npm run build:designs` — parity, bleed, and no-placeholder on every combo.
+`npm run build` now ends with `scripts/test-issues.mjs` as well as parity,
+bleed, and no-placeholder.
 
 | | alexandria | newport | wasatch |
 |---|---|---|---|
-| DESIGN=a | parity 0 missing, bleed pass, placeholder pass | same | same |
-| DESIGN=b | same | same | same |
-| DESIGN=c | same | same | same |
+| DESIGN=c (default) | shell + content + no dupes + no CSS leak + file URLs; parity 0 missing; bleed pass; placeholder pass | same | same |
+| DESIGN=a, DESIGN=b | same issue treatment, still building | same | same |
 
-URL extras are the guide index plus hashed CSS (allowed). “You may also like” and JSON-LD Organization/WebSite/ItemList are still on markdown guides. Each market still uses its own Kit uid for the weekly form.
-
-Alexandria A promo uses the **secret date night registry** form `a3fdb10f7b`, not the weekly uid. Newport A promo uses waterfront `614b2b6da7`. Wasatch has no separate magnet uid — promo is a link to the real guide plus the weekly form in the hero.
-
-## Guesses (look here)
-
-1. **A/B palettes are not the live ivory/navy.** C keeps those tokens. A is rust/ink/sans. B is wine/newsprint/serif. If a design is picked, colours can still move.
-2. **Featured story on A is a real lead-magnet guide with a photo**, not this week’s issue (issues have no hero image). This week’s issue is the first rows of “Latest”.
-3. **Month shown is the month of the latest issue**, not the build machine’s “today”.
-4. **Issue-HTML parsing is conservative:** `h3` and `<li><a>` only. Inline paragraph links are skipped so the list does not become every URL in the email.
-5. **Wasatch magnets are hiking/springs guides**, not gated Kit forms. Promo is “Open the guide”.
-6. Dist path changed from `dist/<id>/` to `dist/<id>-<design>/` so all nine builds can sit side by side.
-7. Default `DESIGN=c` so `MARKET=alexandria npm run build` still works.
-
-## Live repos untouched
-
-```
-git -C newsletter-sites/novathisweek-site        status --porcelain   # empty
-git -C newsletter-sites/newportnewsletter-site   status --porcelain   # empty
-git -C newsletter-sites/stufftodoinutah-site     status --porcelain   # empty
-```
-
-No wrangler, no Cloudflare deploy, no Kit/Sheets/launchd/social/newsletter job. No push.
+Indexed paths still exist as files: `/issues/`, `/issues/latest.html`,
+`/issues/<date>.html`. Guide "You may also like" and JSON-LD are untouched.
+Headline remains `src/config/markets.js` → `home.headline`.
