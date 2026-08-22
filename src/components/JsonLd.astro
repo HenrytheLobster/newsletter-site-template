@@ -1,0 +1,10 @@
+---
+const { data } = Astro.props;
+const blocks = (Array.isArray(data) ? data : [data]).filter(Boolean);
+---
+
+{
+  blocks.map((block) => (
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(block)} />
+  ))
+}

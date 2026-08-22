@@ -1,0 +1,33 @@
+---
+import { getMarket } from "../lib/market.js";
+
+const market = getMarket();
+const {
+  variant = "dark",
+  heading = market.home.subscribeHeading,
+  body = market.home.subscribeBody,
+  kit = market.kit,
+  compact = false,
+} = Astro.props;
+
+const uid = kit?.uid || market.kit.uid;
+const src = kit?.src || market.kit.src;
+---
+
+<div
+  class:list={[
+    "subscribe-block",
+    variant === "light" && "subscribe-block--light",
+    compact && "subscribe-block--compact",
+  ]}
+>
+  {heading ? <h2>{heading}</h2> : null}
+  {body ? <p>{body}</p> : null}
+  <div class:list={["embed-shell", variant === "light" && "embed-shell--light"]}>
+    <script is:inline async data-uid={uid} src={src}></script>
+  </div>
+  <p class="signup-note">
+    Subscriptions are handled by Kit. You'll confirm your address if Kit asks for it.
+    Free. Unsubscribe in one click.
+  </p>
+</div>

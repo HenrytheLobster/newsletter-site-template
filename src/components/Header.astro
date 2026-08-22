@@ -1,0 +1,88 @@
+---
+import { getMarket, guidesIndexPath } from "../lib/market.js";
+import { getDesignId } from "../lib/design.js";
+
+const market = getMarket();
+const design = getDesignId();
+const guidesHref = guidesIndexPath(market);
+const { current = "" } = Astro.props;
+
+const links = [
+  { href: "/", label: market.nav.home },
+  { href: "/issues/latest.html", label: market.nav.issue },
+  { href: guidesHref, label: market.nav.guides },
+  { href: "/issues/", label: market.nav.archive },
+  { href: "/subscribe", label: market.nav.subscribe },
+];
+
+function isCurrent(href: string) {
+  if (href === "/") return current === "/";
+  if (current === href) return true;
+  if (href.endsWith("/") && current.startsWith(href)) return true;
+  const guidesBase = guidesHref.replace(/\/$/, "");
+  if (href === guidesBase && (current === guidesBase || current.startsWith(guidesBase + "/"))) {
+    return true;
+  }
+  return false;
+}
+---
+
+{
+  design === "a" && (
+    <header class="masthead">
+      <div class="wrap masthead-inner">
+        <a class="brand" href="/">{market.name}</a>
+        <nav aria-label="Primary">
+          {links.map((link) => (
+            <a
+              href={link.href}
+              class={link.href === "/subscribe" ? "nav-subscribe" : undefined}
+              aria-current={isCurrent(link.href) ? "page" : undefined}
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </header>
+  )
+}
+
+{
+  design === "b" && (
+    <header class="masthead">
+      <div class="masthead-bar">
+        <div class="wrap masthead-brand">
+          <a class="brand" href="/">{market.name}</a>
+          <p class="masthead-region">{market.home.eyebrow}</p>
+        </div>
+      </div>
+      <nav class="masthead-nav" aria-label="Primary">
+        <div class="wrap">
+          {links.map((link) => (
+            <a href={link.href} aria-current={isCurrent(link.href) ? "page" : undefined}>
+              {link.label}
+            </a>
+          ))}
+        </div>
+      </nav>
+    </header>
+  )
+}
+
+{
+  design === "c" && (
+    <header class="masthead">
+      <div class="wrap masthead-inner">
+        <a class="brand" href="/">{market.name}</a>
+        <nav aria-label="Primary">
+          {links.map((link) => (
+            <a href={link.href} aria-current={isCurrent(link.href) ? "page" : undefined}>
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </header>
+  )
+}

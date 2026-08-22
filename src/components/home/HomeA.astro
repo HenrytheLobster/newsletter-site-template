@@ -1,0 +1,178 @@
+---
+import SubscribeBlock from "../SubscribeBlock.astro";
+import PromoBand from "../PromoBand.astro";
+import { getMarket } from "../../lib/market.js";
+import { displayDate } from "../../lib/calendar.js";
+
+const market = getMarket();
+const { model } = Astro.props;
+const {
+  featuredGuide,
+  issues,
+  guideCards,
+  groupedGuides,
+  imageGrid,
+  promoMagnet,
+  latestIssue,
+  guidesIndex,
+} = model;
+
+const listItems = [
+  ...issues.slice(0, 6).map((issue) => ({
+    href: issue.href,
+    title: issue.title,
+    meta: displayDate(issue.date),
+    kicker: "Issue",
+  })),
+  ...guideCards.slice(0, 8).map((card) => ({
+    href: card.href,
+    title: card.title,
+    meta: [card.place, card.generated ? displayDate(card.generated) : ""]
+      .filter(Boolean)
+      .join(" · "),
+    kicker: card.place || "Guide",
+  })),
+].slice(0, 8);
+
+const grid = imageGrid
+  .filter((item) => item.href !== featuredGuide?.href)
+  .slice(0, 8);
+---
+
+<main class="home">
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">{market.home.eyebrow}</p>
+      <h1 id="page-title">{market.home.headline}</h1>
+      <p class="dek">{market.home.dek}</p>
+      <div class="hero-signup">
+        <SubscribeBlock variant="light" compact={true} />
+      </div>
+    </div>
+  </section>
+
+  {
+    featuredGuide && (
+      <section class="featured" aria-labelledby="featured-heading">
+        <div class="wrap featured-inner">
+          {featuredGuide.image && (
+            <a class="featured-image" href={featuredGuide.href}>
+              <img src={featuredGuide.image} alt="" width="960" height="540" />
+            </a>
+          )}
+          <div class="featured-copy">
+            <p class="eyebrow">{featuredGuide.kicker || "Guide"}</p>
+            <h2 id="featured-heading">
+              <a href={featuredGuide.href}>{featuredGuide.title}</a>
+            </h2>
+            <p class="dek">{featuredGuide.description}</p>
+            <p>
+              <a class="text-link" href={featuredGuide.href}>
+                Read the guide
+              </a>
+            </p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    listItems.length > 0 && (
+      <section class="story-list wrap" aria-labelledby="latest-heading">
+        <div class="section-head">
+          <h2 id="latest-heading">Latest</h2>
+          {latestIssue && (
+            <a class="see-more" href="/issues/latest.html">
+              See more
+            </a>
+          )}
+        </div>
+        <ul>
+          {listItems.map((item) => (
+            <li>
+              <a href={item.href}>
+                <span class="story-title">{item.title}</span>
+                <span class="story-meta">{item.meta}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    grid.length > 0 && (
+      <section class="image-grid wrap" aria-label="Guides with photos">
+        {grid.map((item) => (
+          <a href={item.href} class="image-tile">
+            <img src={item.image} alt="" width="400" height="280" />
+            <span>{item.title}</span>
+          </a>
+        ))}
+      </section>
+    )
+  }
+
+  <PromoBand magnet={promoMagnet} />
+
+  {
+    groupedGuides
+      .filter((group) => group.cards.length >= 2)
+      .map((group) => (
+      <section class="story-list wrap" aria-labelledby={`group-${group.family}`}>
+        <div class="section-head">
+          <h2 id={`group-${group.family}`}>{group.label}</h2>
+          <a class="see-more" href={guidesIndex}>
+            See more
+          </a>
+        </div>
+        <ul>
+          {group.cards.slice(0, 5).map((card) => (
+            <li>
+              <a href={card.href}>
+                <span class="story-title">{card.title}</span>
+                <span class="story-meta">
+                  {[card.place, card.generated ? displayDate(card.generated) : ""]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+
+  {
+    groupedGuides.some((group) => group.cards.length < 2) && (
+      <section class="story-list wrap" aria-labelledby="more-roundups">
+        <div class="section-head">
+          <h2 id="more-roundups">More roundups</h2>
+          <a class="see-more" href={guidesIndex}>
+            See more
+          </a>
+        </div>
+        <ul>
+          {groupedGuides
+            .filter((group) => group.cards.length < 2)
+            .flatMap((group) => group.cards)
+            .map((card) => (
+              <li>
+                <a href={card.href}>
+                  <span class="story-title">{card.title}</span>
+                  <span class="story-meta">
+                    {[card.place, card.generated ? displayDate(card.generated) : ""]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </a>
+              </li>
+            ))}
+        </ul>
+      </section>
+    )
+  }
+</main>

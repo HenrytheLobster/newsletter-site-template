@@ -1,0 +1,75 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getMarket, guidesIndexPath } from "../../lib/market.js";
+import { toCard } from "../../lib/guides.js";
+
+export function getStaticPaths() {
+  const market = getMarket();
+  return [{ params: { base: market.guidesBasePath } }];
+}
+
+const market = getMarket();
+const guides = (await getCollection("guides")).sort((a, b) =>
+  a.data.title.localeCompare(b.data.title)
+);
+const cards = guides.map((g) => toCard(market, g));
+const path = guidesIndexPath(market);
+---
+
+<BaseLayout
+  title={`Guides — ${market.name}`}
+  description={`Local roundups and guides from ${market.name}.`}
+  canonicalPath={path}
+>
+  <div class="wrap guides-index">
+  <p class="eyebrow">{market.regionLabel}</p>
+  <h1>Guides</h1>
+  <p class="dek">
+    Local roundups compiled from official calendars. Each listing links back to
+    the source so you can confirm before you go.
+  </p>
+
+  {
+    market.featuredLegacy.length > 0 && (
+      <>
+        <p class="section-heading">Featured</p>
+        <section class="tiles" aria-label="Featured guides">
+          {market.featuredLegacy.map((item) => (
+            <article class="tile">
+              <strong>{item.title}</strong>
+              <p>{item.description}</p>
+              <a href={item.href}>Open the guide</a>
+            </article>
+          ))}
+        </section>
+      </>
+    )
+  }
+
+  <p class="section-heading">All roundups</p>
+  {
+    cards.length === 0 ? (
+      <p>No roundup guides in this market yet.</p>
+    ) : (
+      <section class="tiles tiles-2" aria-label="Roundup guides">
+        {cards.map((card) => (
+          <article class="tile">
+            <strong>{card.title}</strong>
+            <p>{card.description}</p>
+            {card.place && (
+              <p class="guide-meta">
+                {card.place}
+                {card.entryCount ? ` · ${card.entryCount} listings` : ""}
+              </p>
+            )}
+            <p>
+              <a href={card.href}>Read the guide</a>
+            </p>
+          </article>
+        ))}
+      </section>
+    )
+  }
+  </div>
+</BaseLayout>

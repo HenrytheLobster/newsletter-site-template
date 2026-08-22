@@ -1,0 +1,39 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getMarket } from "../lib/market.js";
+
+const market = getMarket();
+---
+
+<BaseLayout
+  title={`Subscribe — ${market.name}`}
+  description={market.tagline}
+  canonicalPath="/subscribe"
+>
+  <main class="subscribe-page wrap">
+    <section class="panel">
+      <div class="copy">
+        <p class="eyebrow">{market.home.eyebrow}</p>
+        <h1>Get the next issue.</h1>
+        <p class="dek">{market.home.dek}</p>
+        <div class="points">
+          {market.home.promises.slice(0, 3).map((item) => <div>{item}</div>)}
+        </div>
+      </div>
+      <aside class="card">
+        <h2>Subscribe</h2>
+        <p>{market.home.subscribeBody}</p>
+        <div class="embed-shell">
+          <script is:inline async data-uid={market.kit.uid} src={market.kit.src}></script>
+        </div>
+        <p class="signup-note">
+          Subscriptions are handled by Kit. You'll confirm your address if Kit asks for it.
+        </p>
+        <div class="quick-links">
+          <a href="/issues/latest.html">Read this week's issue</a>
+          <a href="/issues/">Browse past issues</a>
+        </div>
+      </aside>
+    </section>
+  </main>
+</BaseLayout>

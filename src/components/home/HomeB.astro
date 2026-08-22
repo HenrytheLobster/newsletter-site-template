@@ -1,0 +1,144 @@
+---
+import SubscribeBlock from "../SubscribeBlock.astro";
+import CalendarMonth from "../CalendarMonth.astro";
+import { getMarket } from "../../lib/market.js";
+import { displayDate } from "../../lib/calendar.js";
+
+const market = getMarket();
+const { model } = Astro.props;
+const {
+  latestIssue,
+  leadMagnets,
+  featuredLegacy,
+  guideCards,
+  listings,
+  calendar,
+  eventsFeedMissing,
+  issues,
+  guidesIndex,
+} = model;
+
+const editorial = [];
+if (latestIssue) {
+  editorial.push({
+    href: "/issues/latest.html",
+    title: latestIssue.title,
+    dek: latestIssue.subject || market.tagline,
+    image: null,
+    meta: displayDate(latestIssue.date),
+    kicker: "This week's issue",
+  });
+}
+const seen = new Set(editorial.map((e) => e.href));
+for (const item of [...leadMagnets, ...featuredLegacy, ...guideCards]) {
+  if (seen.has(item.href)) continue;
+  seen.add(item.href);
+  editorial.push({
+    href: item.href,
+    title: item.title,
+    dek: item.description || "",
+    image: item.image || null,
+    meta: [item.place, item.generated ? displayDate(item.generated) : ""].filter(Boolean).join(" · ") || "Guide",
+    kicker: item.kicker || "Guide",
+  });
+}
+
+const calCaption = listings.kind === "events"
+  ? "Days with listed events."
+  : listings.kind === "issue-picks"
+    ? "Days covered in this week's issue."
+    : "Days an issue was published.";
+---
+
+<main class="home">
+  <div class="wrap">
+    <section class="lede">
+      <p class="eyebrow">{market.home.eyebrow}</p>
+      <h1 id="page-title">{market.home.headline}</h1>
+      <p class="dek">{market.home.dek}</p>
+    </section>
+
+    <section class="editorial" aria-label="This week">
+      {
+        editorial.map((row) => (
+          <article class="ed-row">
+            <div class="ed-copy">
+              <p class="ed-kicker">{row.kicker}</p>
+              <h2>
+                <a href={row.href}>{row.title}</a>
+              </h2>
+              {row.dek && <p class="ed-dek">{row.dek}</p>}
+              <p class="ed-meta">{row.meta}</p>
+            </div>
+            {
+              row.image ? (
+                <a class="ed-thumb" href={row.href} tabindex="-1">
+                  <img src={row.image} alt="" width="220" height="148" />
+                </a>
+              ) : (
+                <p class="ed-dateblock">{row.meta}</p>
+              )
+            }
+          </article>
+        ))
+      }
+    </section>
+
+    <section class="events" aria-labelledby="events-heading">
+      <div class="events-head">
+        <h2 id="events-heading">{listings.heading}</h2>
+        <a class="see-more" href="/issues/latest.html">
+          This week's issue
+        </a>
+      </div>
+      <div class="events-split">
+        <CalendarMonth calendar={calendar} caption={calCaption} />
+        <ol class="event-list">
+          {
+            listings.items.slice(0, 12).map((item) => (
+              <li>
+                <a href={item.href}>
+                  <span class="event-date">{displayDate(item.date)}</span>
+                  <span class="event-title">{item.title}</span>
+                  {(item.venue || item.time) && (
+                    <span class="event-where">
+                      {[item.venue, item.time].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                  {item.dek && !item.venue && <span class="event-dek">{item.dek}</span>}
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+      {
+        eventsFeedMissing && (
+          <p class="events-note">
+            {listings.kind === "issue-picks"
+              ? "Dates and listings come from this week's issue — not a separate events feed."
+              : "Dates shown are issue publication days. A local event calendar needs an events export in the site repo."}
+          </p>
+        )
+      }
+    </section>
+
+    <section class="signup-well" aria-label="Subscribe">
+      <div class="signup-copy">
+        <h2>Get the weekly email</h2>
+        <p>One short email for {market.regionLabel}.</p>
+      </div>
+      <SubscribeBlock variant="light" />
+    </section>
+
+    {
+      issues.length > 1 && (
+        <p class="archive-line">
+          <a href="/issues/">All {issues.length} issues</a>
+          {" · "}
+          <a href={guidesIndex}>All guides</a>
+        </p>
+      )
+    }
+  </div>
+</main>

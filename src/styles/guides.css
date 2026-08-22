@@ -1,0 +1,177 @@
+/* Shared guide + subscribe internals. Tokens come from the active design. */
+
+.guide-wrap {
+  width: min(var(--read, 760px), calc(100% - 32px));
+  margin: 0 auto;
+  padding: 8px 0 64px;
+}
+
+.guide-meta {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+.guide-hero-image {
+  display: block;
+  width: 100%;
+  margin: 22px 0 0;
+  border-radius: var(--radius, 0);
+  border: 1px solid var(--line);
+}
+
+.guide-body {
+  margin-top: 28px;
+}
+
+.guide-body h2 {
+  font-size: 26px;
+  margin: 40px 0 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.guide-body h3 {
+  font-size: 19px;
+  margin: 24px 0 4px;
+  color: var(--ink);
+}
+
+.guide-body p {
+  margin: 8px 0;
+}
+
+.guide-body a {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.related {
+  margin-top: 48px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.related h2 {
+  margin: 0 0 16px;
+  color: var(--ink);
+  font-size: 22px;
+}
+
+.related-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.related-list a {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 0);
+  background: var(--paper);
+  padding: 16px 18px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.related-list a:hover,
+.related-list a:focus-visible {
+  border-color: var(--accent);
+}
+
+.related-list strong {
+  display: block;
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.related-list span {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+.embed-shell {
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: var(--radius, 8px);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  padding: 16px;
+}
+
+.embed-shell--light {
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.subscribe-block h2 {
+  margin: 0 0 10px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.subscribe-block p {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.subscribe-block--compact h2 {
+  font-size: 12px;
+}
+
+.subscribe-block--compact p {
+  font-size: 15px;
+}
+
+.signup-note {
+  margin: 12px 0 0;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.button,
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap, 44px);
+  padding: 12px 18px;
+  border-radius: var(--btn-radius, 999px);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.button {
+  background: var(--accent);
+  color: var(--invert-fg, #fff);
+  border-color: var(--accent);
+}
+
+.button-secondary {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--ink);
+}
+
+@media (min-width: 880px) {
+  .related-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}

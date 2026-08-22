@@ -1,0 +1,23 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import HomeA from "../components/home/HomeA.astro";
+import HomeB from "../components/home/HomeB.astro";
+import HomeC from "../components/home/HomeC.astro";
+import { getMarket } from "../lib/market.js";
+import { getDesignId } from "../lib/design.js";
+import { buildHomeModel } from "../lib/home.js";
+
+const market = getMarket();
+const design = getDesignId();
+const guides = (await getCollection("guides")).sort((a, b) =>
+  a.data.title.localeCompare(b.data.title)
+);
+const model = buildHomeModel(market, guides);
+---
+
+<BaseLayout title={market.name} description={market.tagline} canonicalPath="/">
+  {design === "a" && <HomeA model={model} />}
+  {design === "b" && <HomeB model={model} />}
+  {design === "c" && <HomeC model={model} />}
+</BaseLayout>

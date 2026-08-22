@@ -1,0 +1,53 @@
+---
+import SubscribeBlock from "./SubscribeBlock.astro";
+import { getMarket } from "../lib/market.js";
+
+const market = getMarket();
+const { magnet } = Astro.props;
+const ownKit = magnet?.kit && magnet.kit.uid && magnet.kit.uid !== market.kit.uid;
+---
+
+{
+  magnet && (
+<section class="promo-band" aria-labelledby="promo-heading">
+  <div class="wrap promo-inner">
+    <div class="promo-copy">
+      <p class="eyebrow">Free guide</p>
+      <h2 id="promo-heading">{magnet.title}</h2>
+      <p>{magnet.description}</p>
+      {
+        ownKit ? (
+          <SubscribeBlock
+            variant="dark"
+            compact={true}
+            heading="Get this guide"
+            body=""
+            kit={magnet.kit}
+          />
+        ) : (
+          <p>
+            <a class="button" href={magnet.href}>
+              Open the guide
+            </a>
+          </p>
+        )
+      }
+      {
+        ownKit && (
+          <p>
+            <a class="button-secondary" href={magnet.href}>
+              Open the guide
+            </a>
+          </p>
+        )
+      }
+    </div>
+    {
+      magnet.image && (
+        <img src={magnet.image} alt="" class="promo-image" width="640" height="480" />
+      )
+    }
+  </div>
+</section>
+  )
+}

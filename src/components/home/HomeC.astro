@@ -1,0 +1,138 @@
+---
+import SubscribeBlock from "../SubscribeBlock.astro";
+import CalendarMonth from "../CalendarMonth.astro";
+import PromoBand from "../PromoBand.astro";
+import { getMarket } from "../../lib/market.js";
+import { displayDate } from "../../lib/calendar.js";
+
+const market = getMarket();
+const { model } = Astro.props;
+const {
+  latestIssue,
+  featuredGuide,
+  featuredLegacy,
+  guideCards,
+  listings,
+  calendar,
+  promoMagnet,
+  eventsFeedMissing,
+  guidesIndex,
+  issues,
+} = model;
+
+const calCaption = listings.kind === "events"
+  ? "Days with listed events."
+  : listings.kind === "issue-picks"
+    ? "Days covered in this week's issue."
+    : "Days an issue was published.";
+---
+
+<main class="home">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">{market.home.eyebrow}</p>
+        <h1 id="page-title">{market.home.headline}</h1>
+        <p class="dek">{market.home.dek}</p>
+        {
+          latestIssue && (
+            <p class="hero-issue">
+              This week's issue:{" "}
+              <a href="/issues/latest.html">{latestIssue.title}</a>
+              <span> · {displayDate(latestIssue.date)}</span>
+            </p>
+          )
+        }
+      </div>
+      <aside class="signup-panel" aria-label="Subscribe">
+        <SubscribeBlock />
+      </aside>
+    </div>
+  </section>
+
+  {
+    featuredGuide && (
+      <section class="featured wrap" aria-labelledby="featured-heading">
+        {featuredGuide.image && (
+          <a href={featuredGuide.href} class="featured-image">
+            <img src={featuredGuide.image} alt="" width="720" height="420" />
+          </a>
+        )}
+        <div>
+          <p class="eyebrow">{featuredGuide.kicker || "Guide"}</p>
+          <h2 id="featured-heading">
+            <a href={featuredGuide.href}>{featuredGuide.title}</a>
+          </h2>
+          <p class="dek">{featuredGuide.description}</p>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="week wrap" aria-labelledby="week-heading">
+    <div class="week-copy">
+      <h2 id="week-heading">{listings.heading}</h2>
+      <ol class="event-list">
+        {
+          listings.items.slice(0, 8).map((item) => (
+            <li>
+              <a href={item.href}>
+                <span class="event-date">{displayDate(item.date)}</span>
+                <span class="event-title">{item.title}</span>
+                {(item.venue || item.time) && (
+                  <span class="event-where">
+                    {[item.venue, item.time].filter(Boolean).join(" · ")}
+                  </span>
+                )}
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+      <p>
+        <a class="button-secondary" href="/issues/latest.html">
+          Read this week's issue
+        </a>
+      </p>
+      {
+        eventsFeedMissing && (
+          <p class="events-note">
+            Listings come from this week's issue and the archive. A local event
+            calendar needs an events export in the site repo.
+          </p>
+        )
+      }
+    </div>
+    <CalendarMonth calendar={calendar} caption={calCaption} />
+  </section>
+
+  {
+    (featuredLegacy.length > 0 || guideCards.length > 0) && (
+      <section class="tiles-section wrap">
+        <p class="section-heading">Local guides</p>
+        <div class="tiles" aria-label="Local guides">
+          {(featuredLegacy.length ? featuredLegacy : guideCards.slice(0, 6)).map((item) => (
+            <article class="tile">
+              {item.image && <img src={item.image} alt="" width="400" height="220" />}
+              <strong>{item.title}</strong>
+              <p>{item.description}</p>
+              <a href={item.href}>Open the guide</a>
+            </article>
+          ))}
+        </div>
+        <p class="hero-links">
+          <a class="button-secondary" href={guidesIndex}>
+            All guides
+          </a>
+          {issues.length > 0 && (
+            <a class="button-secondary" href="/issues/">
+              Issue archive
+            </a>
+          )}
+        </p>
+      </section>
+    )
+  }
+
+  <PromoBand magnet={promoMagnet} />
+</main>

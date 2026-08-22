@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+src/content/guides/*.md
+src/generated/*
+!src/generated/.gitkeep
+public/*
+!public/.gitkeep
+.DS_Store
+*.log

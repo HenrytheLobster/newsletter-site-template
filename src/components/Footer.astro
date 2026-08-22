@@ -1,0 +1,49 @@
+---
+import { getMarket, guidesIndexPath } from "../lib/market.js";
+import { getDesignId } from "../lib/design.js";
+
+const market = getMarket();
+const design = getDesignId();
+const guidesHref = guidesIndexPath(market);
+---
+
+{
+  design === "b" ? (
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <p class="footer-name">{market.name}</p>
+          <p>{market.footer}</p>
+        </div>
+        <nav aria-label="Footer">
+          <p class="footer-label">Browse</p>
+          <a href="/">{market.nav.home}</a>
+          <a href={guidesHref}>{market.nav.guides}</a>
+          <a href="/subscribe">{market.nav.subscribe}</a>
+        </nav>
+        <nav aria-label="This week">
+          <p class="footer-label">This week</p>
+          <a href="/issues/latest.html">{market.nav.issue}</a>
+          <a href="/issues/">{market.nav.archive}</a>
+        </nav>
+        <div>
+          <p class="footer-label">{market.regionLabel}</p>
+          <p>One short email a week. Unsubscribe in one click.</p>
+        </div>
+      </div>
+    </footer>
+  ) : (
+    <footer class="site-footer">
+      <div class="wrap">
+        <nav aria-label="Footer">
+          <a href="/">{market.nav.home}</a>
+          <a href="/issues/latest.html">{market.nav.issue}</a>
+          <a href={guidesHref}>{market.nav.guides}</a>
+          <a href="/issues/">{market.nav.archive}</a>
+          <a href="/subscribe">{market.nav.subscribe}</a>
+        </nav>
+        <p>{market.footer}</p>
+      </div>
+    </footer>
+  )
+}

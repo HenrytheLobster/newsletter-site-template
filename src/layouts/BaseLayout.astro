@@ -1,0 +1,93 @@
+---
+import { getMarket, siteUrl } from "../lib/market.js";
+import { getDesignId } from "../lib/design.js";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import JsonLd from "../components/JsonLd.astro";
+import "../styles/reset.css";
+import "../styles/a.css";
+import "../styles/b.css";
+import "../styles/c.css";
+import "../styles/guides.css";
+
+const market = getMarket();
+const design = getDesignId();
+const origin = siteUrl(market);
+
+const {
+  title,
+  description = market.tagline,
+  canonicalPath = "/",
+  ogType = "website",
+  ogImage,
+  jsonLd = [],
+} = Astro.props;
+
+const pageTitle = title.includes(market.name) ? title : `${title} — ${market.name}`;
+const canonical = canonicalPath === "/" ? `${origin}/` : `${origin}${canonicalPath}`;
+const image = ogImage
+  ? ogImage.startsWith("http")
+    ? ogImage
+    : `${origin}${ogImage}`
+  : market.ogImage
+    ? `${origin}${market.ogImage}`
+    : undefined;
+
+const org = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: market.name,
+  url: `${origin}/`,
+};
+const website = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: market.name,
+  url: `${origin}/`,
+  publisher: { "@type": "Organization", name: market.name },
+};
+
+const extraLd = Array.isArray(jsonLd) ? jsonLd : [jsonLd];
+
+const c = market.colors;
+---
+
+<!doctype html>
+<html lang="en" data-design={design}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${market.analyticsId}`}></script>
+    <script is:inline define:vars={{ analyticsId: market.analyticsId }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      gtag("js", new Date());
+      gtag("config", analyticsId);
+    </script>
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={market.name} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {image && <meta property="og:image" content={image} />}
+    <meta name="twitter:card" content={image ? "summary_large_image" : "summary"} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {image && <meta name="twitter:image" content={image} />}
+    <JsonLd data={[org, website, ...extraLd]} />
+  </head>
+  <body
+    class={`d-${design}`}
+    style={design === "c"
+      ? `--ivory:${c.ivory};--paper:${c.paper};--stage:${c.stage};--border:${c.border};--blue:${c.blue};--steel:${c.steel};--iron:${c.iron};`
+      : undefined}
+  >
+    <a class="skip" href="#page-title">Skip to content</a>
+    <Header current={canonicalPath} />
+    <slot />
+    <Footer />
+  </body>
+</html>

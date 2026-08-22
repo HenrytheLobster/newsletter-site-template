@@ -1,0 +1,40 @@
+---
+const { calendar, caption } = Astro.props;
+---
+
+<div class="cal-wrap">
+  <table class="cal" role="grid" aria-label={calendar.title}>
+    <caption>
+      {calendar.title}
+      {caption ? <span class="cal-caption"> {caption}</span> : null}
+    </caption>
+    <thead>
+      <tr>
+        {calendar.weekdays.map((day) => (
+          <th scope="col">{day}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {calendar.weeks.map((week) => (
+        <tr>
+          {week.map((cell) =>
+            cell.empty ? (
+              <td class="cal-empty"></td>
+            ) : (
+              <td class:list={[cell.marked && "cal-marked"]}>
+                {cell.marked && cell.href ? (
+                  <a href={cell.href} title={cell.label || cell.iso}>
+                    <span class="cal-day">{cell.day}</span>
+                  </a>
+                ) : (
+                  <span class="cal-day">{cell.day}</span>
+                )}
+              </td>
+            )
+          )}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

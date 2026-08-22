@@ -1,0 +1,40 @@
+{
+  "name": "newsletter-site-template",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "prepare:market": "node scripts/prepare-market.mjs",
+    "build": "node scripts/prepare-market.mjs && astro build && node scripts/copy-cf-files.mjs && node scripts/url_parity.mjs && node scripts/bleed.mjs && node scripts/no-placeholder.mjs",
+    "build:alexandria": "MARKET=alexandria npm run build",
+    "build:newport": "MARKET=newport npm run build",
+    "build:wasatch": "MARKET=wasatch npm run build",
+    "build:all": "npm run build:alexandria && npm run build:newport && npm run build:wasatch",
+    "build:designs": "node scripts/build-designs.mjs",
+    "dev": "node scripts/prepare-market.mjs && astro dev",
+    "dev:alexandria": "MARKET=alexandria npm run dev",
+    "dev:newport": "MARKET=newport npm run dev",
+    "dev:wasatch": "MARKET=wasatch npm run dev",
+    "preview": "astro preview",
+    "preview:alexandria": "MARKET=alexandria astro preview --port 4321",
+    "preview:newport": "MARKET=newport astro preview --port 4322",
+    "preview:wasatch": "MARKET=wasatch astro preview --port 4323",
+    "preview:alexandria:a": "DESIGN=a MARKET=alexandria astro preview --port 4321",
+    "preview:alexandria:b": "DESIGN=b MARKET=alexandria astro preview --port 4321",
+    "preview:alexandria:c": "DESIGN=c MARKET=alexandria astro preview --port 4321",
+    "preview:newport:a": "DESIGN=a MARKET=newport astro preview --port 4322",
+    "preview:newport:b": "DESIGN=b MARKET=newport astro preview --port 4322",
+    "preview:newport:c": "DESIGN=c MARKET=newport astro preview --port 4322",
+    "preview:wasatch:a": "DESIGN=a MARKET=wasatch astro preview --port 4323",
+    "preview:wasatch:b": "DESIGN=b MARKET=wasatch astro preview --port 4323",
+    "preview:wasatch:c": "DESIGN=c MARKET=wasatch astro preview --port 4323",
+    "parity": "node scripts/url_parity.mjs",
+    "bleed": "node scripts/bleed.mjs",
+    "no-placeholder": "node scripts/no-placeholder.mjs"
+  },
+  "dependencies": {
+    "astro": "^5.13.2"
+  }
+}
