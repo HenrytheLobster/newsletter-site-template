@@ -36,8 +36,8 @@ const optionalString = z
 const guides = defineCollection({
   loader: glob({
     pattern: "*.md",
-    // cwd, not this package — site repos keep their own markdown.
-    base: path.resolve("src/content/guides"),
+    // Build-only copies; site repos keep source markdown under src/content/guides.
+    base: path.resolve("src/generated/guides"),
   }),
   schema: z.object({
     slug: z.string(),

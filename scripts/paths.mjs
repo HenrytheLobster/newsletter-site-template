@@ -62,6 +62,10 @@ export function generatedDir() {
   return path.join(ROOT, "src", "generated");
 }
 
+export function generatedGuidesDir() {
+  return path.join(generatedDir(), "guides");
+}
+
 /** Convert a repo-relative file path to the URL Cloudflare would serve. */
 export function fileToUrl(relPosix) {
   const rel = relPosix.replaceAll("\\", "/").replace(/^\.\/?/, "");
@@ -82,8 +86,9 @@ function slugsIn(dir) {
 }
 
 export function markdownSlugs(market = getMarket()) {
-  const fromProject = slugsIn(guidesContentDir());
-  if (fromProject.length) return fromProject;
+  const sourceDir = isSiteMode() ? guidesContentDir() : market?.contentDir;
+  const fromSource = sourceDir ? slugsIn(sourceDir) : [];
+  if (fromSource.length) return fromSource;
   if (market?.contentDir) return slugsIn(market.contentDir);
   return [];
 }

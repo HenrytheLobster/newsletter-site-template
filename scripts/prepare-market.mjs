@@ -12,7 +12,9 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { MARKETS, MARKET_IDS, getMarket as catalogGetMarket } from "../src/config/markets.js";
 import { getDesignId } from "../src/config/designs.js";
+import { guidePath } from "../src/lib/market.js";
 import { generatedMarketPath } from "../src/lib/project.js";
+import { relatedGuides, venueHeadings } from "../src/lib/guides.js";
 import {
   ROOT,
   astroGeneratedHtml,
@@ -22,6 +24,7 @@ import {
   fileToUrl,
   findCfFile,
   generatedDir,
+  generatedGuidesDir,
   guidesContentDir,
   markdownSlugs,
   publicDir,
@@ -31,6 +34,7 @@ import {
 const TEXT_EXT = new Set([".html", ".js", ".css", ".xml", ".txt", ".json", ".svg", ".md"]);
 const PUBLIC_KEEP = new Set(["_redirects", ".assetsignore"]);
 const CF_FILES = ["_redirects", ".assetsignore"];
+const VENUE_LINK_PREFIX = "_Also in:";
 
 function rewriteForeignIdentifiers(text, market) {
   let out = text;
@@ -67,6 +71,117 @@ function copyFile(src, dest, { rewrite } = {}) {
     return;
   }
   fs.copyFileSync(src, dest);
+}
+
+function parseGuideMarkdown(file) {
+  const markdown = fs.readFileSync(file, "utf8");
+  const match = markdown.match(/^---\n([\s\S]*?)\n---\n?/);
+  const frontmatter = {};
+  let body = markdown;
+  let header = "";
+  if (match) {
+    header = match[0];
+    body = markdown.slice(match[0].length);
+    for (const line of match[1].split("\n")) {
+      const field = line.match(/^([A-Za-z0-9_]+):\s*(.*)$/);
+      if (!field) continue;
+      const [, key, rawValue] = field;
+      frontmatter[key] = rawValue.trim().replace(/^["']|["']$/g, "");
+    }
+  }
+  return { header, body, data: frontmatter };
+}
+
+function normalizeVenueHeading(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^the\s+/i, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function escapeMarkdownLinkText(value) {
+  return String(value || "").replace(/([\\[\]])/g, "\\$1");
+}
+
+function escapeMarkdownLinkHref(value) {
+  return String(value || "").replace(/\)/g, "%29");
+}
+
+function rankVenueGuideLinks(current, candidates) {
+  const ranked = relatedGuides(current, [current, ...candidates], candidates.length);
+  const seen = new Set(ranked.map((guide) => guide.data.slug));
+  for (const guide of candidates) {
+    if (!seen.has(guide.data.slug)) ranked.push(guide);
+  }
+  const samePlace = [];
+  const fallback = [];
+  for (const guide of ranked) {
+    if (guide.data.place && guide.data.place === current.data.place) {
+      samePlace.push(guide);
+    } else {
+      fallback.push(guide);
+    }
+  }
+  return [...samePlace, ...fallback].slice(0, 2);
+}
+
+function insertVenueGuideLinks(body, guide, venueIndex, market) {
+  const lines = body.split("\n");
+  const out = [];
+  for (const line of lines) {
+    out.push(line);
+    const match = line.match(/^## (.+)$/);
+    if (!match) continue;
+    const normalized = normalizeVenueHeading(match[1]);
+    const candidates = (venueIndex.get(normalized) || []).filter(
+      (other) => other.data.slug !== guide.data.slug
+    );
+    if (candidates.length === 0) continue;
+    const links = rankVenueGuideLinks(guide, candidates).map((entry) => {
+      const title = escapeMarkdownLinkText(entry.data.title || entry.data.slug);
+      const href = escapeMarkdownLinkHref(guidePath(market, entry.data.slug));
+      return `[${title}](${href})`;
+    });
+    if (links.length > 0) {
+      out.push("");
+      out.push(`${VENUE_LINK_PREFIX} ${links.join(", ")}._`);
+    }
+  }
+  return out.join("\n");
+}
+
+function addInternalVenueLinks(contentDest, market) {
+  const files = fs
+    .readdirSync(contentDest)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => path.join(contentDest, name))
+    .sort();
+  const guides = files.map((file) => {
+    const parsed = parseGuideMarkdown(file);
+    return {
+      file,
+      header: parsed.header,
+      body: parsed.body,
+      data: {
+        ...parsed.data,
+        slug: parsed.data.slug || path.basename(file, ".md"),
+      },
+    };
+  });
+  const venueIndex = new Map();
+  for (const guide of guides) {
+    for (const heading of venueHeadings(guide.body)) {
+      const normalized = normalizeVenueHeading(heading);
+      if (!normalized) continue;
+      if (!venueIndex.has(normalized)) venueIndex.set(normalized, []);
+      venueIndex.get(normalized).push(guide);
+    }
+  }
+  for (const guide of guides) {
+    const body = insertVenueGuideLinks(guide.body, guide, venueIndex, market);
+    fs.writeFileSync(guide.file, guide.header + body);
+  }
 }
 
 async function loadMarketModule(file) {
@@ -115,7 +230,8 @@ function copyCfInputs(market, pub) {
 async function main() {
   const { market, mode } = await resolveMarket();
   const design = getDesignId();
-  const contentDest = guidesContentDir();
+  const contentSource = mode === "template" ? market.contentDir : guidesContentDir();
+  const contentDest = generatedGuidesDir();
   const pub = publicDir();
   const gen = generatedDir();
 
@@ -125,22 +241,24 @@ async function main() {
     JSON.stringify(market, null, 2) + "\n"
   );
 
+  if (!fs.existsSync(contentSource)) {
+    throw new Error(`Content dir missing: ${contentSource}`);
+  }
+  emptyDir(contentDest);
+  for (const name of fs.readdirSync(contentSource)) {
+    if (!name.endsWith(".md")) continue;
+    fs.copyFileSync(
+      path.join(contentSource, name),
+      path.join(contentDest, name)
+    );
+  }
+  addInternalVenueLinks(contentDest, market);
+
   if (mode === "template") {
-    if (!fs.existsSync(market.contentDir)) {
-      throw new Error(`Content dir missing: ${market.contentDir}`);
-    }
     if (!fs.existsSync(market.siteRepo)) {
       throw new Error(`Site repo missing: ${market.siteRepo}`);
     }
-    emptyDir(contentDest);
     emptyDir(pub);
-    for (const name of fs.readdirSync(market.contentDir)) {
-      if (!name.endsWith(".md")) continue;
-      fs.copyFileSync(
-        path.join(market.contentDir, name),
-        path.join(contentDest, name)
-      );
-    }
   } else {
     emptyDirKeeping(pub, PUBLIC_KEEP);
   }
@@ -150,7 +268,7 @@ async function main() {
   const slugs = markdownSlugs(market);
   if (mode === "site" && slugs.length === 0) {
     throw new Error(
-      `No guide markdown in ${contentDest}. Backfill from newsletter-platform/markets/${market.id}/content/*.md`
+      `No guide markdown in ${contentSource}. Backfill from newsletter-platform/markets/${market.id}/content/*.md`
     );
   }
 
