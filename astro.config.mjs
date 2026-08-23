@@ -1,7 +1,7 @@
 import { defineConfig } from "astro/config";
-import { getMarket } from "./src/config/markets.js";
+import newsletterTheme from "./src/integration.js";
+import { getMarket } from "./src/lib/market.js";
 import { getDesignId } from "./src/config/designs.js";
-import { stripLeadMatter } from "./src/lib/strip-lead.js";
 
 const market = getMarket();
 const design = getDesignId();
@@ -13,7 +13,5 @@ export default defineConfig({
   build: {
     format: "directory",
   },
-  markdown: {
-    remarkPlugins: [stripLeadMatter],
-  },
+  integrations: [newsletterTheme()],
 });

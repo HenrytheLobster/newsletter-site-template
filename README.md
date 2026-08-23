@@ -1,32 +1,82 @@
-# newsletter-site-template
+# newsletter-site-theme
 
-One Astro site product. Three market instances. Three homepage directions,
-selectable at build time with `DESIGN=a|b|c`. Same content, same URLs.
+One shared Astro theme. Three market sites install it. A fix lands once.
 
-This directory is the template. It does not deploy. It does not touch the
-live site repos, the platform, Kit, Sheets, or Cloudflare.
+This repo is the package (`newsletter-site-theme`). It does not deploy. It
+does not touch Kit, Sheets, Cloudflare, or the live site repos except to
+*read* them when you preview a market locally.
 
-## Markets
+## What lives where
 
-| id | site | domain | markdown guides | live URL prefix |
-|---|---|---|---|---|
-| `alexandria` | NOVA This Week | novathisweek.com | 15 | `/guides/<slug>` |
-| `newport` | Newport News This Week | newportnewsletter.com | 3 | `/seo/<slug>` |
-| `wasatch` | Stuff To Do In Utah | stufftodoinutah.com | 10 | `/guides/<slug>` |
+**This package** owns layouts, components, styles, designs A/B/C, issue
+extraction and CSS scoping, guide rendering, related-guides, JSON-LD,
+sitemap and robots, and the verification scripts (parity, bleed,
+placeholder, issue tests, drift guard).
 
-## Designs
+**Each market repo** owns its market config (name, domain, region, colours,
+Kit uid, GA id, nav labels, headline), its content (`src/content/guides/`
+markdown, `issues/`, `images/` / legacy `guides/`), `wrangler.jsonc`,
+`public/_redirects`, `public/.assetsignore`, and a thin `package.json` +
+`astro.config.mjs`.
 
-Same pages. Different structure, density, type, and colour.
+If something is ambiguous it goes in this package.
 
-| DESIGN | Direction | What it is trying to win |
-|---|---|---|
-| `a` | Conversion-first | Email capture above the fold, one featured guide, tight lists, image grid, dark lead-magnet promo |
-| `b` | Local magazine | Branded masthead, editorial rows with thumbnails, issue/event calendar, denser browse |
-| `c` | Hybrid (default) | Owner ivory/navy/Georgia, Hustle signup discipline, Scoop calendar usefulness |
+## Install (a market repo)
 
-Headline copy lives in `src/config/markets.js` → `home.headline`. Plain factual default. Drop the owner line there; it is shared across all three designs.
+Until the GitHub repo exists, local development uses a path dependency:
 
-## Preview commands (one per design per market)
+```json
+"newsletter-site-theme": "file:../../newsletter-site-template"
+```
+
+That is what Newport is committed with, so `npm ci && npm run build` works
+from a clean checkout on this machine. It will **not** work on Cloudflare
+Workers Builds — there is no sibling checkout in that container.
+
+### Distribution: public GitHub repo, git URL
+
+Chosen over a private repo + build token, and over npmjs:
+
+| Option | Cloudflare `npm ci` | What the owner does every fix | Tradeoff |
+|---|---|---|---|
+| **Public GitHub + git URL** (chosen) | clones, no auth | push this repo, then `npm update newsletter-site-theme` in the site and commit the lockfile | theme source is public; Kit/GA ids already are, in the live HTML |
+| Private GitHub + token | needs `GITHUB_TOKEN` in the build env and an `.npmrc` | same, plus token rotation | more moving parts for a theme that is not secret |
+| npmjs publish | `npm ci` from the registry | `npm publish` on every fix, then bump the site | extra account and a publish step we do not need |
+
+The owner creates the GitHub repo himself (`gh repo create` is blocked for
+agents). Suggested name matches this folder. The package is already shaped
+so the moment that repo exists:
+
+```bash
+# 1. Create the public repo and push this package (owner machine)
+cd /Volumes/SSD/Projects/newsletter-site-template
+git remote add origin git@github.com:HenrytheLobster/newsletter-site-template.git
+# then, in the GitHub UI or: gh repo create HenrytheLobster/newsletter-site-template --public --source=. --remote=origin
+git push -u origin main
+
+# 2. Point each site at the git URL (repeat per market)
+cd /Volumes/SSD/Projects/newsletter-sites/newportnewsletter-site
+npm install github:HenrytheLobster/newsletter-site-template
+npm ci
+npm run build
+# commit package.json + package-lock.json, then the owner pushes
+```
+
+`npm ci` on Cloudflare then clones the public repo. The lockfile pins the
+commit. No interactive auth.
+
+A later theme fix:
+
+```bash
+cd /Volumes/SSD/Projects/newsletter-site-template
+# commit, owner pushes
+cd /Volumes/SSD/Projects/newsletter-sites/newportnewsletter-site
+npm update newsletter-site-theme
+npm run build
+# commit the lockfile, owner pushes
+```
+
+## Preview commands (this package)
 
 Build first, then preview. Dist is `dist/<market>-<design>/`.
 
@@ -52,101 +102,44 @@ DESIGN=c MARKET=wasatch    npm run build && DESIGN=c MARKET=wasatch    npm run p
 
 Ports: alexandria `4321`, newport `4322`, wasatch `4323`.
 
-Shorthand after a build:
-
-```bash
-npm run preview:alexandria:a
-npm run preview:alexandria:b
-npm run preview:alexandria:c
-```
-
-## Build
-
 ```bash
 MARKET=alexandria npm run build          # DESIGN defaults to c → dist/alexandria-c
 DESIGN=a MARKET=alexandria npm run build # dist/alexandria-a
-
 npm run build:all                        # 3 markets, current DESIGN or c
-npm run build:designs                    # 3 markets × 3 designs (parity + bleed + no-placeholder)
+npm run build:designs                    # 3 markets × 3 designs
 ```
 
 Each `build` run:
 
-1. Copies that market's markdown from `newsletter-platform/markets/<id>/content/*.md` (read-only).
-2. Copies pass-through static files from the live site repo (issues, images, legacy guides, `_redirects`, `.assetsignore`).
+1. Copies that market's markdown from `newsletter-platform/markets/<id>/content/*.md` (read-only). If the site repo already has `src/config/market.js`, that file is the live config.
+2. Copies pass-through static files from the live site repo (issues, images, legacy guides, `_redirects`, `.assetsignore`). Skips the Astro app tree so a converted site is not counted as 197 public URLs.
 3. Builds Astro into `dist/<id>-<design>/`.
-4. Flattens issue pages so `/issues/latest.html` and `/issues/<date>.html` are files, not directories (`scripts/flatten-issue-pages.mjs`).
-5. Diffs live-repo URLs against dist (`scripts/url_parity.mjs`) — **fails on any missing path**.
-6. Scans dist for another market's name, domain, GA id, or Kit uid (`scripts/bleed.mjs`).
-7. Scans rendered pages for lorem / placeholder / fabricated event copy (`scripts/no-placeholder.mjs`).
-8. Asserts issue pages sit in the site shell, keep real issue text, do not duplicate `<html>`/`<head>`/`<body>` or the analytics tag, and that issue CSS cannot leak (`scripts/test-issues.mjs`).
+4. Flattens issue pages so `/issues/latest.html` is a file, not a directory.
+5. Diffs live-repo **content** URLs against dist (`scripts/url_parity.mjs`) — fails on any missing path.
+6. Scans dist for another market's name, domain, GA id, or Kit uid.
+7. Scans rendered pages for lorem / placeholder / fabricated event copy.
+8. Asserts issue pages sit in the site shell and that issue CSS cannot leak.
+9. Fails if a converted site repo still vendors a copy of something this package owns (`scripts/no-theme-dupes.mjs`).
 
-## Config shape
+## Markets
 
-`src/config/markets.js` — one object per market. Everything that differs
-goes here: id, name, domain, region label, timezone, colours, Kit uid/src,
-analytics id, nav labels, homepage copy (`home.headline` is the owner line),
-featured legacy guides, lead magnets (real titles, images, Kit uids), and the
-path prefix for markdown roundups (`guides` vs `seo`).
+| id | site | domain | markdown guides | live URL prefix |
+|---|---|---|---|---|
+| `alexandria` | NOVA This Week | novathisweek.com | 15 | `/guides/<slug>` |
+| `newport` | Newport News This Week | newportnewsletter.com | 3 | `/guides/<slug>` |
+| `wasatch` | Stuff To Do In Utah | stufftodoinutah.com | 10 | `/guides/<slug>` |
 
-`DESIGN=a|b|c` selects chrome + homepage structure. It does not swap a market's Kit form.
+Newport is converted: it depends on this package and builds one market into
+`dist/`. Alexandria and Wasatch are still the pre-Astro static repos;
+convert them the same way (see REPORT.md).
 
-## Events feed (direction B)
+## Designs
 
-The site repo has no event data. Events live in
-`newsletter-platform/markets/<id>/state/curated.json`, which a Cloudflare
-build cannot see.
-
-Until a curated-events export exists, B (and C's calendar) are driven from
-**this week's issue** (`issues/latest.html` + `issues/manifest.json`) — real
-titles and dates already in the site repo. Empty calendar cells stay empty.
-
-To populate a Scoop-style dated list with venue and time, copy this file
-into the site repo as `events.json`:
-
-```json
-[
-  {
-    "title": "Event name from curated.json",
-    "date": "2026-08-22",
-    "venue": "Venue name",
-    "time": "7:00 PM",
-    "url": "https://…"
-  }
-]
-```
-
-`prepare-market` copies it when present. Do not invent rows.
-
-## What is generated vs passed through
-
-**Astro renders**
-
-- `/`, `/subscribe`
-- markdown roundups at `/{guidesBasePath}/{slug}`
-- a guide index at `/{guidesBasePath}/` (new URL; existing slugs unchanged)
-- issue pages at `/issues/`, `/issues/latest.html`, `/issues/<date>.html` (site header/nav/footer around the email body; `.html` URLs unchanged)
-- `sitemap.xml`, `robots.txt`
-
-**Passed through unchanged** (so their URLs survive)
-
-- `issues/manifest.json`
-- legacy gated guides (`guide.html`, images, `guide-gate.css/js`)
-- `images/`
-- `_redirects`, `.assetsignore`
-- `fireworks-dc.html`, `guides/date-night.html`, Newport `/seo/best-free-museums-newport-news`, etc.
-
-`wrangler.jsonc` stays in the site repo root.
-
-## Site repos (pilot)
-
-`newportnewsletter-site` is the first live instance. It vendors a copy of
-this theme (provisional — the long-term sharing model is not chosen) and
-builds **one** market into `dist/` rather than `dist/<market>-<design>/`.
-A fix here is not live on Newport until someone runs that repo's
-`scripts/sync-theme.sh` on purpose.
+Same pages. Different structure, density, type, and colour. `DESIGN=a|b|c`.
+Default `c`. Headline copy lives in the market config → `home.headline`.
 
 ## Safety
 
-Writes only happen in this directory. The live site repos, the platform,
-schedule-tool, and social-poster are read-only.
+Writes only happen in this directory and, when converting a market, in that
+market's site repo. Never `git push`. Never `gh repo create`. Never
+Cloudflare / wrangler deploy / Kit / Sheets / launchd / social / mail.

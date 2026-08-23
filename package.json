@@ -1,13 +1,35 @@
 {
-  "name": "newsletter-site-template",
+  "name": "newsletter-site-theme",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=22"
   },
+  "description": "Shared Astro theme for the three newsletter market sites.",
+  "exports": {
+    ".": "./src/integration.js",
+    "./content-config": "./src/content.config.ts",
+    "./integration": "./src/integration.js",
+    "./lib/*": "./src/lib/*",
+    "./config/*": "./src/config/*",
+    "./layouts/*": "./src/layouts/*",
+    "./components/*": "./src/components/*",
+    "./styles/*": "./src/styles/*",
+    "./pages/*": "./src/theme-pages/*"
+  },
+  "bin": {
+    "newsletter-theme": "./scripts/cli.mjs"
+  },
+  "files": [
+    "src",
+    "scripts",
+    "astro.config.mjs",
+    "tsconfig.json"
+  ],
   "scripts": {
     "prepare:market": "node scripts/prepare-market.mjs",
-    "build": "node scripts/prepare-market.mjs && astro build && node scripts/flatten-issue-pages.mjs && node scripts/copy-cf-files.mjs && node scripts/url_parity.mjs && node scripts/bleed.mjs && node scripts/no-placeholder.mjs && node scripts/test-issues.mjs",
+    "build": "node scripts/prepare-market.mjs && astro build && node scripts/flatten-issue-pages.mjs && node scripts/copy-cf-files.mjs && node scripts/url_parity.mjs && node scripts/bleed.mjs && node scripts/no-placeholder.mjs && node scripts/test-issues.mjs && node scripts/no-theme-dupes.mjs",
     "build:alexandria": "MARKET=alexandria npm run build",
     "build:newport": "MARKET=newport npm run build",
     "build:wasatch": "MARKET=wasatch npm run build",
@@ -33,7 +55,8 @@
     "parity": "node scripts/url_parity.mjs",
     "bleed": "node scripts/bleed.mjs",
     "no-placeholder": "node scripts/no-placeholder.mjs",
-    "test:issues": "node scripts/test-issues.mjs"
+    "test:issues": "node scripts/test-issues.mjs",
+    "test:dupes": "node scripts/no-theme-dupes.mjs"
   },
   "dependencies": {
     "astro": "^5.13.2"

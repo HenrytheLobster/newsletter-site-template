@@ -1,13 +1,26 @@
 #!/usr/bin/env node
 /**
- * Acceptance test: every URL that exists in the live site repo must exist
- * in Astro's dist/. Extra URLs (guide index, hashed assets) are allowed.
+ * Acceptance test: every URL that exists in the live site content must
+ * exist in Astro's dist/. Extra URLs (guide index, hashed assets) are
+ * allowed.
+ *
+ * Walks the site checkout, skipping the Astro app / theme directories so
+ * a converted site repo is compared against real site content only — not
+ * against src/, dist/, public/, or scripts/.
  */
 import fs from "node:fs";
 import path from "node:path";
-import { getMarket } from "../src/config/markets.js";
+import { getMarket } from "../src/lib/market.js";
 import { getDesignId } from "../src/config/designs.js";
-import { distDir, fileToUrl, generatedDir, SKIP_NAMES, walkFiles } from "./paths.mjs";
+import {
+  distDir,
+  fileToUrl,
+  findCfFile,
+  generatedDir,
+  isSiteMode,
+  ROOT,
+  walkFiles,
+} from "./paths.mjs";
 
 const DEPLOY_FILES = ["_redirects", ".assetsignore"];
 
@@ -23,14 +36,15 @@ function main() {
     throw new Error(`dist missing: ${dist}`);
   }
 
-  const before = urlsFrom(market.siteRepo);
+  const beforeDir = isSiteMode() ? ROOT : market.siteRepo;
+  const before = urlsFrom(beforeDir);
   const after = urlsFrom(dist);
   const missing = [...before].filter((url) => !after.has(url)).sort();
   const extra = [...after].filter((url) => !before.has(url)).sort();
 
   const deploy = {};
   for (const name of DEPLOY_FILES) {
-    const expected = fs.existsSync(path.join(market.siteRepo, name));
+    const expected = Boolean(findCfFile(name, market));
     const present = fs.existsSync(path.join(dist, name));
     deploy[name] = { expected, present, ok: !expected || present };
   }

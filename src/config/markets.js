@@ -1,6 +1,14 @@
 /**
- * Per-market config. One object drives every public difference:
- * name, domain, colours, analytics, Kit embed, nav, homepage copy.
+ * Catalog of all three markets. Used by:
+ *   - template preview builds (`MARKET=alexandria|newport|wasatch`)
+ *   - bleed.mjs, which must know every foreign name/domain/GA/Kit token
+ *
+ * A converted site repo owns the live copy at `src/config/market.js`.
+ * prepare-market prefers that file when it exists (so a headline edit in
+ * the site is what both the live build and a template preview of that
+ * market see). siteRepo/contentDir still come from this catalog — those
+ * paths are local to the owner's machine and a Cloudflare build never
+ * sees them.
  *
  * Values lifted from the live site repos and market.yaml — not invented.
  * home.headline is the owner-editable line (plain factual default).
@@ -148,7 +156,7 @@ export const MARKETS = {
       "A concise weekly Newport News newsletter with local events, civic notes, development watch, and useful community texture.",
     footer:
       "Newport News This Week — a short weekly email with useful events, civic notes, development watch, and the little local details that make the city easier to understand.",
-    guidesBasePath: "seo",
+    guidesBasePath: "guides",
     siteRepo: "/Volumes/SSD/Projects/newsletter-sites/newportnewsletter-site",
     contentDir:
       "/Volumes/SSD/Projects/newsletter-platform/markets/newport/content",

@@ -6,7 +6,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { getMarket, foreignIdentifiers } from "../src/config/markets.js";
+import { getMarket, foreignIdentifiers } from "../src/lib/market.js";
 import { getDesignId } from "../src/config/designs.js";
 import { distDir, generatedDir, walkFiles } from "./paths.mjs";
 

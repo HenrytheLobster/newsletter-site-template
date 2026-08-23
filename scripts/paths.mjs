@@ -1,17 +1,24 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { getMarket } from "../src/config/markets.js";
+import { getMarket } from "../src/lib/market.js";
 import { getDesignId } from "../src/config/designs.js";
+import { isSiteProject, PROJECT_ROOT } from "../src/lib/project.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const ROOT = path.resolve(__dirname, "..");
+export const ROOT = PROJECT_ROOT;
 
+/**
+ * Names skipped when walking a site checkout for pass-through files and
+ * URL parity. Includes the Astro app / theme so src/, dist/, public/, and
+ * scripts/ are never treated as live URLs. That is what kept the template
+ * parity check honest after Newport vendored a full Astro tree.
+ */
 export const SKIP_NAMES = new Set([
   ".git",
   ".gitignore",
   ".DS_Store",
   "wrangler.jsonc",
+  "wrangler.toml",
+  "wrangler.toml.example",
   "README.md",
   "_READMEFIRST.md",
   "node_modules",
@@ -20,9 +27,25 @@ export const SKIP_NAMES = new Set([
   "functions",
   "_worker.js",
   "lead magnet form links.md",
+  "src",
+  "dist",
+  "public",
+  "scripts",
+  "astro.config.mjs",
+  "tsconfig.json",
+  ".astro",
+  ".nvmrc",
+  ".node-version",
+  "THEME.md",
+  "REPORT.md",
 ]);
 
+export function isSiteMode(root = ROOT) {
+  return isSiteProject(root);
+}
+
 export function distDir(market = getMarket(), design = getDesignId()) {
+  if (isSiteMode()) return path.join(ROOT, "dist");
   return path.join(ROOT, "dist", `${market.id}-${design}`);
 }
 
@@ -38,7 +61,7 @@ export function generatedDir() {
   return path.join(ROOT, "src", "generated");
 }
 
-/** Convert a repo-relative file path to the URL Cloudflare Pages would serve. */
+/** Convert a repo-relative file path to the URL Cloudflare would serve. */
 export function fileToUrl(relPosix) {
   const rel = relPosix.replaceAll("\\", "/").replace(/^\.\/?/, "");
   if (!rel || rel === "index.html") return "/";
@@ -48,13 +71,20 @@ export function fileToUrl(relPosix) {
   return "/" + rel;
 }
 
-export function markdownSlugs(market = getMarket()) {
-  if (!fs.existsSync(market.contentDir)) return [];
+function slugsIn(dir) {
+  if (!fs.existsSync(dir)) return [];
   return fs
-    .readdirSync(market.contentDir)
+    .readdirSync(dir)
     .filter((name) => name.endsWith(".md"))
     .map((name) => name.replace(/\.md$/, ""))
     .sort();
+}
+
+export function markdownSlugs(market = getMarket()) {
+  const fromProject = slugsIn(guidesContentDir());
+  if (fromProject.length) return fromProject;
+  if (market?.contentDir) return slugsIn(market.contentDir);
+  return [];
 }
 
 /**
@@ -117,4 +147,27 @@ export function emptyDir(dir) {
 
 export function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
+}
+
+export function emptyDirKeeping(dir, keepNames) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    return;
+  }
+  for (const name of fs.readdirSync(dir)) {
+    if (keepNames.has(name)) continue;
+    fs.rmSync(path.join(dir, name), { recursive: true, force: true });
+  }
+}
+
+export function findCfFile(name, market = getMarket()) {
+  const candidates = [
+    path.join(publicDir(), name),
+    path.join(ROOT, name),
+  ];
+  if (market?.siteRepo) {
+    candidates.push(path.join(market.siteRepo, "public", name));
+    candidates.push(path.join(market.siteRepo, name));
+  }
+  return candidates.find((p) => fs.existsSync(p));
 }

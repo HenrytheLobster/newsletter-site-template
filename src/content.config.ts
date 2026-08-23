@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 
@@ -33,7 +34,11 @@ const optionalString = z
  * social_image / alts (only newport/best-live-music-newport-news).
  */
 const guides = defineCollection({
-  loader: glob({ pattern: "*.md", base: "./src/content/guides" }),
+  loader: glob({
+    pattern: "*.md",
+    // cwd, not this package — site repos keep their own markdown.
+    base: path.resolve("src/content/guides"),
+  }),
   schema: z.object({
     slug: z.string(),
     title: z.string(),

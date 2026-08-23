@@ -7,7 +7,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { getMarket } from "../src/config/markets.js";
+import { getMarket } from "../src/lib/market.js";
 import { getDesignId } from "../src/config/designs.js";
 import { distDir, generatedDir } from "./paths.mjs";
 

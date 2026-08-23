@@ -1,123 +1,169 @@
-# Issue pages in the site shell
+# Shared theme package
 
-Extends the template. Writes only in `/Volumes/SSD/Projects/newsletter-site-template`.
-No git push. Live site repos, platform, schedule-tool, social-poster, and the
-old forks were not written to.
+Built 2026-08-22. Writes in `newsletter-site-template` and
+`newsletter-sites/newportnewsletter-site` only. No git push. No
+`gh repo create`. No Cloudflare / wrangler deploy / Kit / Sheets.
 
-Built 2026-08-22. Design C remains the default. A and B still build and share
-the same issue treatment.
+## The split
 
-## What counts as "the content"
+**Shared package (`newsletter-site-theme`, this repo)**
 
-Read several real files before deciding:
+Layouts, components, styles, designs A/B/C, issue extraction and CSS
+scoping, guide rendering, related-guides, JSON-LD, sitemap and robots,
+prepare / flatten / copy-cf, and the verification scripts (parity, bleed,
+placeholder, issue tests, drift guard). Pages live in `src/theme-pages/`
+and are `injectRoute`d so a site repo has no `src/pages`.
 
-- `newsletter-sites/novathisweek-site/issues/latest.html` and dated files
-- the same paths in newport and wasatch
-- an older dated file (`2026-06-20.html`) that still has GA in `<head>`
-- `issues/index.html` (the archive listing, not an email)
-- the platform writer: `newsletter-platform/src/newsletter_engine/email_render.py`
-  (`wrap_newsletter_html`) and `publish.py` (writes that body to
-  `issues/<date>.html` and `issues/latest.html`)
+**Per-market site repo**
 
-**Dated issues and `latest.html` are complete email documents.** The publish
-job writes the same HTML the email uses: `<html>`, `<head>` (title, sometimes
-GA and Open Graph), `<body>` with inline styles, a hidden preheader `div`,
-then a table canvas (navy subject banner, cards, subscribe pill, tiny footer).
-There is no inner "content" wrapper the job reliably emits — no
-`.issue-body`, no `#content`. The inner HTML of `<body>` *is* the issue.
+`src/config/market.js` (name, domain, region, colours, Kit uid, GA id, nav,
+headline, featured guides, lead magnets), content (`src/content/guides/`
+markdown, `issues/`, legacy `guides/` / images), `wrangler.jsonc`,
+`public/_redirects`, `public/.assetsignore`, thin `package.json` +
+`astro.config.mjs`, and a one-line `src/content.config.ts` re-export
+(Astro only loads that file from the project).
 
-So the extractor takes:
+Ambiguous things went in the package. The catalog at
+`src/config/markets.js` stays here so template preview can still build all
+three markets and so `bleed.mjs` knows every foreign name/domain/GA/Kit
+token. A converted site’s `src/config/market.js` wins for that market
+(prepare overlays it). `siteRepo` / `contentDir` stay in the catalog —
+those paths are the owner’s machine, and Cloudflare never sees them.
 
-1. `<body>` innerHTML
-2. minus `<script>` (old issues embed gtag in `<head>`; those must not ride
-   into the site page)
-3. minus `<style>` (pulled out and scoped — see below)
-4. minus the hidden preheader (`mso-hide:all` / `display:none` + `max-height:0`)
-5. the body's inline `style` copied onto the wrapper so the ivory canvas
-   survives without a second `<body>`
+Why this cut: a sitemap fix is one commit in the package. A headline
+change is one commit in the site. Nothing in the middle is copied.
 
-The navy banner, cards, and email footer stay. That is what the reader
-already knows as the issue, sitting under the site header.
+## Distribution
 
-**`issues/index.html` is not an email.** It is a listing with its own `.nav`
-and unscoped `body`/`h1` CSS. Dropping that document into the site layout
-would double the nav and leak CSS. The archive page is rendered from
-`issues/manifest.json` (the same list publish already maintains) through the
-design C (or A/B) layout.
+Chosen: **public GitHub repo, npm git URL.**
 
-## Issue CSS, and how it cannot leak
-
-Current dated/`latest` files have **no `<style>` blocks** — all presentation
-is inline. Only the old archive `index.html` has a `<style>`. Future issues
-might grow a stylesheet, so every extracted `<style>` is still scoped.
-
-`src/lib/scope-css.js` prefixes every selector with
-`html body .issue-body.issue-body`. `html` / `body` / `:root` become that
-host. `@media` / `@supports` inner rules are scoped; `@font-face` /
-`@keyframes` stay as-is (they have no element selectors).
-
-That prefix beats `body.d-c h1` and `body.d-c a` from the design sheets.
-`src/styles/issues.css` then `all: revert`s site element rules inside
-`.issue-body` so the email's inline styles own the look.
-
-Proof is in `scripts/test-issues.mjs`:
-
-- A fixture sheet `body { background: red } .masthead, footer { display: none }`
-  becomes only host-prefixed selectors. `cssLeaksFromIssue()` fails the build
-  if any remaining selector does not contain `.issue-body`.
-- The same fixture run through `extractIssueDocument` keeps "Slightly
-  different markup", drops `<script>` / `<html>` / `<head>` / `<body>`, and
-  emits leak-free CSS.
-- Dist pages: one `<html>`, one `<head>`, one `<body>`, one gtag snippet.
-
-## How a brand-new issue file flows through
-
-The platform `publish` job still writes `issues/<date>.html`, rewrites
-`latest.html` / `index.html` / `manifest.json` in the site repo. This
-template does not run that job.
-
-On the next template build:
-
-1. `prepare-market` copies every `issues/*.html` except `index.html` into
-   `src/generated/issues/` (not `public/`, so Astro does not emit a second
-   document). `manifest.json` still goes to `public/issues/`.
-2. `src/pages/issues/[name].html.astro` `getStaticPaths` lists whatever is
-   in that generated dir. A file it has never seen becomes a page with no
-   code change.
-3. After `astro build`, `flatten-issue-pages.mjs` turns
-   `issues/latest.html/index.html` into the file `issues/latest.html` so the
-   indexed URL shape is unchanged.
-4. If the markup is slightly different (no `<body>`, extra wrapper, a
-   `<style>`, missing title), the extractor degrades to readable markup
-   instead of throwing.
-
-## Awkward markup
-
-- Email tables with nested `<div>` cards and **invalid** `<p>…<ul>…</ul></p>`.
-  Left alone; cleaning it would restyle the issue.
-- Hidden preheader padded with `&zwnj;` for inbox preview. Stripped from the
-  body; the text is used as the meta description when the file has no
-  `<meta name="description">`, with the zwnj padding removed.
-- Older dated files include GA in `<head>` plus Open Graph. Scripts are
-  dropped so the site layout's tag is the only one. Title / description are
-  reused.
-- `issues/index.html` ships its own nav and `body { … }` CSS. Not used as
-  a document; the manifest is the source of truth for the archive list.
-- Astro `build.format: "directory"` would have turned `/issues/latest.html`
-  into a directory. Flattening is required to keep the file URL. The route
-  file cannot be named `[file].html.astro` — Astro's `$$file` collides;
-  it is `[name].html.astro`.
-
-## Tests (green)
-
-`npm run build` now ends with `scripts/test-issues.mjs` as well as parity,
-bleed, and no-placeholder.
-
-| | alexandria | newport | wasatch |
+| Option | Cloudflare `npm ci` | Every theme fix | Tradeoff |
 |---|---|---|---|
-| DESIGN=c (default) | shell + content + no dupes + no CSS leak + file URLs; parity 0 missing; bleed pass; placeholder pass | same | same |
-| DESIGN=a, DESIGN=b | same issue treatment, still building | same | same |
+| **Public GitHub + `github:HenrytheLobster/newsletter-site-template`** | clones, no auth | push this repo; in the site `npm update newsletter-site-theme` and commit the lockfile | theme source is public. Kit/GA ids already are, in the live HTML |
+| Private repo + build token | needs `GITHUB_TOKEN` + `.npmrc` | same, plus token rotation | more moving parts for a theme that is not secret |
+| npmjs | registry fetch | `npm publish` then bump | extra account and a publish step we do not need |
 
-Indexed paths still exist as files: `/issues/`, `/issues/latest.html`,
-`/issues/<date>.html`. Guide "You may also like" and JSON-LD are untouched.
-Headline remains `src/config/markets.js` → `home.headline`.
+Until that repo exists, Newport is committed with
+
+```
+"newsletter-site-theme": "file:../../newsletter-site-template"
+```
+
+so `npm ci && npm run build` works from a clean checkout **on this
+machine**. That path does not exist in the Cloudflare container. **Do
+not push Newport until the GitHub repo is up and the dep is swapped**,
+or the live build will fail.
+
+### Commands the owner must run
+
+`gh repo create` is blocked for agents. Suggested name matches this
+folder. Package name inside it is already `newsletter-site-theme`.
+
+```bash
+# 1. Create the public repo and push the package
+cd /Volumes/SSD/Projects/newsletter-site-template
+git remote add origin git@github.com:HenrytheLobster/newsletter-site-template.git
+# then in the GitHub UI, or:
+#   gh repo create HenrytheLobster/newsletter-site-template --public --source=. --remote=origin
+git push -u origin main
+
+# 2. Point Newport at the git URL (before any Cloudflare-facing push)
+cd /Volumes/SSD/Projects/newsletter-sites/newportnewsletter-site
+npm install github:HenrytheLobster/newsletter-site-template
+npm run build
+# commit package.json + package-lock.json; owner pushes
+
+# 3. A later theme fix
+cd /Volumes/SSD/Projects/newsletter-site-template
+# commit; owner pushes
+cd /Volumes/SSD/Projects/newsletter-sites/newportnewsletter-site
+npm update newsletter-site-theme
+npm run build
+# commit the lockfile; owner pushes
+```
+
+The lockfile pins the commit. Cloudflare `npm ci` then clones the public
+repo with no interactive auth.
+
+## Drift guard
+
+`scripts/no-theme-dupes.mjs` is on every build.
+
+- Unit: a temp dir with `src/layouts/` fails; the package still contains
+  every owned path.
+- Site: fails if a theme consumer still has layouts, components, styles,
+  lib, pages, `designs.js`, `markets.js`, or the old verification /
+  `sync-theme.sh` scripts. `content.config.ts` must re-export from the
+  package; `astro.config.mjs` must not carry the markdown plugin.
+
+Unconverted static repos (Alexandria, Wasatch) are skipped.
+
+## Parity fix
+
+The template used to walk the whole Newport checkout, so after the Astro
+app was vendored it compared against 197 files (and copied that tree into
+`public/` / `dist/`). `SKIP_NAMES` now skips `src/`, `dist/`, `public/`,
+`scripts/`, and the other app files. Template `MARKET=newport` is **46
+before, 0 missing** — real site content only. `_redirects` is found in
+`public/` as well as the repo root, so the 301 file is no longer dropped.
+
+## Newport verification
+
+From a clean `npm ci && npm run build` in `newportnewsletter-site`:
+
+| Check | Result |
+|---|---|
+| `npm ci && npm run build` | PASS |
+| URL parity | 46 before, 49 after, **0 missing** (extras: hashed CSS, `/_redirects`, `/guides` index) |
+| `dist/_redirects` | **identical** to `public/_redirects`. 8 `/seo/` 301s, 7 `/lead-magnets/` 301s |
+| Issue files | 11 dated `/issues/2026-*.html` + `latest.html` + archive `index.html` (13 html files). `latest.html` is a file, not a directory |
+| Sitemap | extensionless `/issues/<date>` and `/issues/latest` — no `.html` in the sitemap (commit `db0a179`) |
+| Kit uid | `78016a6dfc` on home and subscribe |
+| GA | `G-NBCD5YGRCN` on home and subscribe |
+| wrangler `name` | `newport-newsletter` (untouched) |
+| Foreign identity | none (bleed PASS) |
+| `dist/` | gitignored |
+
+Template preview of Newport still works: DESIGN=a, b, and c all PASS.
+Alexandria-c and wasatch-c PASS. Designs A/B/C share the same issue
+treatment.
+
+## What Alexandria and Wasatch each need
+
+Do not convert them until the GitHub repo exists, or they will hit the
+same `file:` Cloudflare hole. When they follow, each needs:
+
+1. **`src/config/market.js`** — copy that market’s object out of this
+   package’s catalog. Drop `siteRepo` / `contentDir`. Keep Kit, GA,
+   colours, nav, headline, featured, lead magnets. Default `MARKET` to
+   that id and `DESIGN` to `c` so Cloudflare needs no extra env.
+2. **Guide markdown** at `src/content/guides/*.md`, backfilled from
+   `newsletter-platform/markets/<id>/content/*.md` (15 Alexandria, 10
+   Wasatch). The platform will keep writing there, same as Newport.
+3. **Thin Astro entry** — `astro.config.mjs` with
+   `newsletterTheme()`, `outDir: "dist"`, `site` from the market domain.
+   One-line `src/content.config.ts` re-export. `package.json` scripts
+   calling `newsletter-theme build`, dependency on the theme (git URL
+   once the repo exists).
+4. **Keep the content the platform already writes** — `issues/`, legacy
+   `guides/`, `images/`. Alexandria’s `_redirects` is at the repo root
+   today; move it to `public/_redirects` (or leave it at root — prepare
+   and copy-cf look in both places). Wasatch has no `_redirects`.
+5. **`wrangler.jsonc`** — do **not** rename the Worker.
+   Alexandria is `novathisweek`. Wasatch is `wasatch-newsletter`.
+   Change `assets.directory` from `"."` to `"./dist"`. Gitignore `dist/`.
+6. **Cloudflare dashboard** (owner): build command `npm ci && npm run build`,
+   Node 22, root directory `.`. Do not add a Worker `main`. Do not
+   recreate the project.
+7. **Prove it** with the same checks Newport just passed: clean
+   `npm ci && npm run build`, 0 missing URLs, no foreign identity, issue
+   `.html` files flattened, sitemap extensionless, Kit/GA present,
+   `no-theme-dupes` PASS.
+
+Alexandria extras: `fireworks-dc.html` and the gated guide tree under
+`guides/` and `images/` must keep their URLs. Wasatch extras: the three
+legacy hike/trail/springs guides under `guides/` are pass-through, not
+markdown.
+
+After each conversion, a theme fix is: push this package, `npm update`
+in that site, commit the lockfile.

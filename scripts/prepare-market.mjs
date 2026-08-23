@@ -1,18 +1,26 @@
 #!/usr/bin/env node
 /**
  * Copy one market's markdown + pass-through static files into the Astro app.
- * Reads (never writes) the platform content dir and the live site repo.
+ *
+ * Template mode (this repo): reads the platform content dir and the live
+ * site repo (never writes them). Site mode (a market repo): markdown is
+ * already at src/content/guides/; pass-through files come from this
+ * checkout. Cloudflare cannot see the platform or the other site repos.
  */
 import fs from "node:fs";
 import path from "node:path";
-import { getMarket, MARKETS, MARKET_IDS } from "../src/config/markets.js";
+import { pathToFileURL } from "node:url";
+import { MARKETS, MARKET_IDS, getMarket as catalogGetMarket } from "../src/config/markets.js";
 import { getDesignId } from "../src/config/designs.js";
+import { generatedMarketPath } from "../src/lib/project.js";
 import {
   ROOT,
   astroGeneratedHtml,
   emptyDir,
+  emptyDirKeeping,
   ensureDir,
   fileToUrl,
+  findCfFile,
   generatedDir,
   guidesContentDir,
   markdownSlugs,
@@ -21,6 +29,8 @@ import {
 } from "./paths.mjs";
 
 const TEXT_EXT = new Set([".html", ".js", ".css", ".xml", ".txt", ".json", ".svg", ".md"]);
+const PUBLIC_KEEP = new Set(["_redirects", ".assetsignore"]);
+const CF_FILES = ["_redirects", ".assetsignore"];
 
 function rewriteForeignIdentifiers(text, market) {
   let out = text;
@@ -59,38 +69,98 @@ function copyFile(src, dest, { rewrite } = {}) {
   fs.copyFileSync(src, dest);
 }
 
-function main() {
-  const market = getMarket();
-  const slugs = markdownSlugs(market);
-  const generatedSkip = astroGeneratedHtml(market);
+async function loadMarketModule(file) {
+  const mod = await import(pathToFileURL(file).href);
+  return mod.market || mod.default;
+}
+
+async function resolveMarket() {
+  const siteFile = path.join(ROOT, "src", "config", "market.js");
+  if (fs.existsSync(siteFile)) {
+    const market = await loadMarketModule(siteFile);
+    if (!market?.id) {
+      throw new Error(`${siteFile} must export { market } with an id`);
+    }
+    if (!process.env.MARKET) process.env.MARKET = market.id;
+    if (!process.env.DESIGN) process.env.DESIGN = "c";
+    return { market, mode: "site" };
+  }
+
+  const catalog = catalogGetMarket();
+  const overlay = path.join(catalog.siteRepo, "src", "config", "market.js");
+  if (fs.existsSync(overlay)) {
+    const siteMarket = await loadMarketModule(overlay);
+    return {
+      market: {
+        ...siteMarket,
+        siteRepo: catalog.siteRepo,
+        contentDir: catalog.contentDir,
+      },
+      mode: "template",
+    };
+  }
+  return { market: catalog, mode: "template" };
+}
+
+function copyCfInputs(market, pub) {
+  for (const name of CF_FILES) {
+    const dest = path.join(pub, name);
+    if (fs.existsSync(dest)) continue;
+    const src = findCfFile(name, market);
+    if (!src || src === dest) continue;
+    copyFile(src, dest);
+  }
+}
+
+async function main() {
+  const { market, mode } = await resolveMarket();
+  const design = getDesignId();
   const contentDest = guidesContentDir();
   const pub = publicDir();
+  const gen = generatedDir();
 
-  emptyDir(contentDest);
-  emptyDir(pub);
-  ensureDir(generatedDir());
-  emptyDir(path.join(generatedDir(), "issues"));
+  ensureDir(gen);
+  fs.writeFileSync(
+    generatedMarketPath(),
+    JSON.stringify(market, null, 2) + "\n"
+  );
 
-  if (!fs.existsSync(market.contentDir)) {
-    throw new Error(`Content dir missing: ${market.contentDir}`);
+  if (mode === "template") {
+    if (!fs.existsSync(market.contentDir)) {
+      throw new Error(`Content dir missing: ${market.contentDir}`);
+    }
+    if (!fs.existsSync(market.siteRepo)) {
+      throw new Error(`Site repo missing: ${market.siteRepo}`);
+    }
+    emptyDir(contentDest);
+    emptyDir(pub);
+    for (const name of fs.readdirSync(market.contentDir)) {
+      if (!name.endsWith(".md")) continue;
+      fs.copyFileSync(
+        path.join(market.contentDir, name),
+        path.join(contentDest, name)
+      );
+    }
+  } else {
+    emptyDirKeeping(pub, PUBLIC_KEEP);
   }
-  if (!fs.existsSync(market.siteRepo)) {
-    throw new Error(`Site repo missing: ${market.siteRepo}`);
-  }
 
-  for (const name of fs.readdirSync(market.contentDir)) {
-    if (!name.endsWith(".md")) continue;
-    fs.copyFileSync(
-      path.join(market.contentDir, name),
-      path.join(contentDest, name)
+  emptyDir(path.join(gen, "issues"));
+
+  const slugs = markdownSlugs(market);
+  if (mode === "site" && slugs.length === 0) {
+    throw new Error(
+      `No guide markdown in ${contentDest}. Backfill from newsletter-platform/markets/${market.id}/content/*.md`
     );
   }
 
+  const generatedSkip = astroGeneratedHtml(market);
+  const walkRoot = mode === "site" ? ROOT : market.siteRepo;
   const copied = [];
-  for (const rel of walkFiles(market.siteRepo, {
+  for (const rel of walkFiles(walkRoot, {
     shouldSkip: (relPosix) => generatedSkip.has(relPosix),
   })) {
-    const src = path.join(market.siteRepo, rel);
+    const src = path.join(walkRoot, rel);
     const dest = path.join(pub, rel);
     const underIssues = rel === "issues" || rel.startsWith("issues/");
     // Issue HTML is wrapped by Astro, so it must not land in public/
@@ -101,7 +171,7 @@ function main() {
         copied.push(rel);
         continue;
       }
-      copyFile(src, path.join(generatedDir(), rel), { rewrite: null });
+      copyFile(src, path.join(gen, rel), { rewrite: null });
       copied.push(rel);
       continue;
     }
@@ -109,15 +179,16 @@ function main() {
     copied.push(rel);
   }
 
+  copyCfInputs(market, pub);
+
   const passthroughHtml = copied
     .filter((rel) => rel.endsWith(".html"))
     .filter((rel) => !rel.startsWith("issues/"))
     .map(fileToUrl)
     .sort();
 
-  const eventsJson = path.join(market.siteRepo, "events.json");
+  const eventsJson = path.join(walkRoot, "events.json");
   const hasEventsFeed = fs.existsSync(eventsJson);
-  const design = getDesignId();
 
   const state = {
     marketId: market.id,
@@ -129,14 +200,15 @@ function main() {
     copiedFiles: copied,
     passthroughHtml,
     eventsFeed: hasEventsFeed,
+    mode,
   };
   fs.writeFileSync(
-    path.join(generatedDir(), "state.json"),
+    path.join(gen, "state.json"),
     JSON.stringify(state, null, 2) + "\n"
   );
 
   console.log(
-    `[prepare] ${market.id} design=${design}: ${slugs.length} markdown guides, ${copied.length} pass-through files`
+    `[prepare] ${market.id} design=${design} mode=${mode}: ${slugs.length} markdown guides, ${copied.length} pass-through files`
   );
   if (hasEventsFeed) {
     console.log(`[prepare] ${market.id}: events.json present (calendar will use it)`);
