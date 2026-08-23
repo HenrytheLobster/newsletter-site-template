@@ -138,6 +138,14 @@ into the site repo as `events.json`:
 
 `wrangler.jsonc` stays in the site repo root.
 
+## Site repos (pilot)
+
+`newportnewsletter-site` is the first live instance. It vendors a copy of
+this theme (provisional — the long-term sharing model is not chosen) and
+builds **one** market into `dist/` rather than `dist/<market>-<design>/`.
+A fix here is not live on Newport until someone runs that repo's
+`scripts/sync-theme.sh` on purpose.
+
 ## Safety
 
 Writes only happen in this directory. The live site repos, the platform,

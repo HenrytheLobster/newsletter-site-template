@@ -15,11 +15,16 @@ export const GET: APIRoute = async () => {
     `${origin}/subscribe`,
     `${origin}${guidesIndexPath(market)}`,
     `${origin}/issues`,
-    `${origin}/issues/latest.html`,
+    `${origin}/issues/latest`,
   ]);
 
+  // Cloudflare's asset handling 307s /issues/<name>.html to the extensionless
+  // form, so the .html URL is not canonical -- advertising it puts a redirect
+  // in the sitemap. The pages are still BUILT as .html files (those URLs are
+  // indexed and must keep resolving); only what we advertise changes.
   for (const issue of loadIssueManifest()) {
-    urls.add(`${origin}${issue.href.startsWith("/") ? issue.href : `/${issue.href}`}`);
+    const href = issue.href.startsWith("/") ? issue.href : `/${issue.href}`;
+    urls.add(`${origin}${href.replace(/\.html$/, "")}`);
   }
 
   for (const g of guides) {
