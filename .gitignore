@@ -8,3 +8,4 @@ public/*
 !public/.gitkeep
 .DS_Store
 *.log
+*.tgz

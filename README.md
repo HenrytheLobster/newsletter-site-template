@@ -23,65 +23,59 @@ If something is ambiguous it goes in this package.
 
 ## Install (a market repo)
 
-Until the GitHub repo exists, local development uses a path dependency:
+Each site depends on a **committed tarball** of this package:
 
 ```json
-"newsletter-site-theme": "file:../../newsletter-site-template"
+"newsletter-site-theme": "file:./vendor/newsletter-site-theme-1.0.0.tgz"
 ```
 
-That is what Newport is committed with, so `npm ci && npm run build` works
-from a clean checkout on this machine. It will **not** work on Cloudflare
-Workers Builds — there is no sibling checkout in that container.
+`npm ci` installs from that file with no network and no auth, so Cloudflare
+Workers Builds (which checks out only the site repo) can build. The theme
+SOURCE stays here; each site carries a built artifact, not a second copy
+of the source.
 
-### Distribution: public GitHub repo, git URL
+This is a bridge to a public GitHub repo. `gh repo create` is blocked for
+agents, so the git-URL route is unavailable until the owner creates it.
 
-Chosen over a private repo + build token, and over npmjs:
+### Propagate a theme fix (one command)
+
+```bash
+cd /Volumes/SSD/Projects/newsletter-sites/newsletter-site-template
+scripts/pack-theme.sh
+# then in each site: commit vendor/*.tgz + package.json + package-lock.json
+```
+
+The drift guard fails a site build if it still contains theme source
+(e.g. its own `src/layouts`) or if the committed tarball does not match
+the current pack of this repo.
+
+### Later: one-line swap to the git URL
+
+Once the owner has created and pushed
+`github.com/HenrytheLobster/newsletter-site-template` (public), each site
+changes one line:
+
+```json
+"newsletter-site-theme": "github:HenrytheLobster/newsletter-site-template"
+```
+
+Then `npm install` and commit `package.json` + `package-lock.json`. After
+that, a theme fix is: push this repo, `npm update newsletter-site-theme` in
+the site, commit the lockfile.
 
 | Option | Cloudflare `npm ci` | What the owner does every fix | Tradeoff |
 |---|---|---|---|
-| **Public GitHub + git URL** (chosen) | clones, no auth | push this repo, then `npm update newsletter-site-theme` in the site and commit the lockfile | theme source is public; Kit/GA ids already are, in the live HTML |
+| **Committed tarball** (now) | installs from `vendor/*.tgz`, no auth | `scripts/pack-theme.sh`, commit the tarball + lockfile in each site | extra binary in git; one command to refresh |
+| **Public GitHub + git URL** (next) | clones, no auth | push this repo, then `npm update newsletter-site-theme` in the site and commit the lockfile | theme source is public; Kit/GA ids already are, in the live HTML |
 | Private GitHub + token | needs `GITHUB_TOKEN` in the build env and an `.npmrc` | same, plus token rotation | more moving parts for a theme that is not secret |
 | npmjs publish | `npm ci` from the registry | `npm publish` on every fix, then bump the site | extra account and a publish step we do not need |
-
-The owner creates the GitHub repo himself (`gh repo create` is blocked for
-agents). Suggested name matches this folder. The package is already shaped
-so the moment that repo exists:
-
-```bash
-# 1. Create the public repo and push this package (owner machine)
-cd /Volumes/SSD/Projects/newsletter-site-template
-git remote add origin git@github.com:HenrytheLobster/newsletter-site-template.git
-# then, in the GitHub UI or: gh repo create HenrytheLobster/newsletter-site-template --public --source=. --remote=origin
-git push -u origin main
-
-# 2. Point each site at the git URL (repeat per market)
-cd /Volumes/SSD/Projects/newsletter-sites/newportnewsletter-site
-npm install github:HenrytheLobster/newsletter-site-template
-npm ci
-npm run build
-# commit package.json + package-lock.json, then the owner pushes
-```
-
-`npm ci` on Cloudflare then clones the public repo. The lockfile pins the
-commit. No interactive auth.
-
-A later theme fix:
-
-```bash
-cd /Volumes/SSD/Projects/newsletter-site-template
-# commit, owner pushes
-cd /Volumes/SSD/Projects/newsletter-sites/newportnewsletter-site
-npm update newsletter-site-theme
-npm run build
-# commit the lockfile, owner pushes
-```
 
 ## Preview commands (this package)
 
 Build first, then preview. Dist is `dist/<market>-<design>/`.
 
 ```bash
-cd /Volumes/SSD/Projects/newsletter-site-template
+cd /Volumes/SSD/Projects/newsletter-sites/newsletter-site-template
 npm install
 
 # A — conversion-first
@@ -119,7 +113,7 @@ Each `build` run:
 6. Scans dist for another market's name, domain, GA id, or Kit uid.
 7. Scans rendered pages for lorem / placeholder / fabricated event copy.
 8. Asserts issue pages sit in the site shell and that issue CSS cannot leak.
-9. Fails if a converted site repo still vendors a copy of something this package owns (`scripts/no-theme-dupes.mjs`).
+9. Fails if a converted site repo still vendors theme source (e.g. its own `src/layouts`) or if the committed vendor tarball does not match a fresh pack of this repo (`scripts/no-theme-dupes.mjs`).
 
 ## Markets
 
@@ -129,9 +123,9 @@ Each `build` run:
 | `newport` | Newport News This Week | newportnewsletter.com | 3 | `/guides/<slug>` |
 | `wasatch` | Stuff To Do In Utah | stufftodoinutah.com | 10 | `/guides/<slug>` |
 
-Newport is converted: it depends on this package and builds one market into
-`dist/`. Alexandria and Wasatch are still the pre-Astro static repos;
-convert them the same way (see REPORT.md).
+All three markets are converted: each depends on the committed tarball and
+builds one market into `dist/`. Worker names are not interchangeable —
+`novathisweek`, `newport-newsletter`, `wasatch-newsletter`.
 
 ## Designs
 

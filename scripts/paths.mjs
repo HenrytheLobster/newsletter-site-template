@@ -38,6 +38,7 @@ export const SKIP_NAMES = new Set([
   ".node-version",
   "THEME.md",
   "REPORT.md",
+  "vendor",
 ]);
 
 export function isSiteMode(root = ROOT) {

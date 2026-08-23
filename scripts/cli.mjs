@@ -115,7 +115,7 @@ Commands:
   bleed             no foreign market identity in dist
   no-placeholder    no lorem / fabricated event copy
   test-issues       issue extraction + dist shell
-  no-theme-dupes    fail if this site vendors theme-owned files
+  no-theme-dupes    fail if this site vendors theme source, or the vendor tarball is missing/stale
 `);
       break;
     default:

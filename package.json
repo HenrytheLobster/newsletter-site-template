@@ -22,7 +22,15 @@
     "newsletter-theme": "./scripts/cli.mjs"
   },
   "files": [
-    "src",
+    "src/components",
+    "src/config",
+    "src/layouts",
+    "src/lib",
+    "src/styles",
+    "src/theme-pages",
+    "src/content.config.ts",
+    "src/env.d.ts",
+    "src/integration.js",
     "scripts",
     "astro.config.mjs",
     "tsconfig.json"
@@ -56,7 +64,8 @@
     "bleed": "node scripts/bleed.mjs",
     "no-placeholder": "node scripts/no-placeholder.mjs",
     "test:issues": "node scripts/test-issues.mjs",
-    "test:dupes": "node scripts/no-theme-dupes.mjs"
+    "test:dupes": "node scripts/no-theme-dupes.mjs",
+    "pack:theme": "bash scripts/pack-theme.sh"
   },
   "dependencies": {
     "astro": "^5.13.2"
