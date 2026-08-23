@@ -20,7 +20,10 @@ const issue = loadIssuePage(filename) || {
   content: "<p>This issue could not be read.</p>",
 };
 
-const canonicalPath = `/issues/${filename}`;
+// Cloudflare 307s /issues/<name>.html to the extensionless form, so the
+// .html URL is not the one that serves 200. Point the canonical at the
+// same URL the sitemap advertises rather than at a redirect.
+const canonicalPath = `/issues/${filename.replace(/\.html$/, "")}`;
 const bodyClass = issueBodyClass(issue.bodyClass);
 ---
 
