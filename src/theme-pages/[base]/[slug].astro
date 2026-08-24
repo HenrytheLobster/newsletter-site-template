@@ -4,7 +4,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import RelatedGuides from "../../components/RelatedGuides.astro";
 import SubscribeBlock from "../../components/SubscribeBlock.astro";
 import { getMarket, guidePath, siteUrl } from "../../lib/market.js";
-import { formatDate, placeLabel, venueHeadings } from "../../lib/guides.js";
+import {
+  formatDate,
+  guideListings,
+  placeLabel,
+  publicImageDimensions,
+} from "../../lib/guides.js";
 
 export async function getStaticPaths() {
   const market = getMarket();
@@ -21,9 +26,9 @@ const all = await getCollection("guides");
 const { Content } = await render(entry);
 const path = guidePath(market, entry.data.slug);
 const origin = siteUrl(market);
-const verified = formatDate(entry.data.last_verified);
+const verified = formatDate(entry.data.last_verified || entry.data.verified_on);
 const generated = formatDate(entry.data.generated);
-const venues = venueHeadings(entry.body);
+const listings = guideListings(entry.body);
 const place = placeLabel(entry.data.place);
 
 const heroSrc = entry.data.hero_image
@@ -32,31 +37,84 @@ const heroSrc = entry.data.hero_image
 const socialSrc = entry.data.social_image
   ? `${path}/${entry.data.social_image}`.replace(/\/+/g, "/")
   : heroSrc;
+const heroDimensions = publicImageDimensions(
+  heroSrc,
+  entry.data.hero_image_width,
+  entry.data.hero_image_height
+);
+const socialDimensions =
+  socialSrc === heroSrc ? heroDimensions : publicImageDimensions(socialSrc);
 
 const itemList =
-  venues.length > 0
+  listings.length > 0
     ? {
         "@context": "https://schema.org",
         "@type": "ItemList",
+        "@id": `${origin}${path}#itemlist`,
         name: entry.data.title,
         description: entry.data.description,
-        numberOfItems: venues.length,
-        itemListElement: venues.map((name, index) => ({
+        numberOfItems: listings.length,
+        itemListElement: listings.map((listing, index) => ({
           "@type": "ListItem",
           position: index + 1,
-          name,
+          item: {
+            name: listing.name,
+            ...(listing.venue
+              ? {
+                  location: {
+                    "@type": "Place",
+                    name: listing.venue,
+                  },
+                }
+              : {}),
+          },
         })),
       }
     : null;
 
-const articleLd = {
+const heroImageAlt = entry.data.hero_image_alt?.trim();
+const heroImageText =
+  heroImageAlt && heroImageAlt !== entry.data.title ? heroImageAlt : "";
+const heroImageLd = heroSrc
+  ? {
+      "@type": "ImageObject",
+      url: `${origin}${heroSrc}`,
+      ...(heroDimensions
+        ? { width: heroDimensions.width, height: heroDimensions.height }
+        : {}),
+      ...(heroImageText
+        ? {
+            caption: heroImageText,
+            description: heroImageText,
+          }
+        : {}),
+    }
+  : null;
+
+// Guides are curated roundup pages, not reviews or event listings; CollectionPage
+// plus ItemList mirrors the visible venue/program headings without inventing ratings.
+const guidePageLd = {
   "@context": "https://schema.org",
-  "@type": "Article",
-  headline: entry.data.title,
-  description: entry.data.description,
+  "@type": "CollectionPage",
+  "@id": `${origin}${path}#webpage`,
   url: `${origin}${path}`,
+  name: entry.data.title,
+  description: entry.data.description,
+  inLanguage: "en",
   isAccessibleForFree: true,
-  publisher: { "@type": "Organization", name: market.name },
+  publisher: { "@id": `${origin}/#organization` },
+  isPartOf: { "@id": `${origin}/#website` },
+  about: {
+    "@type": "Thing",
+    name: entry.data.title,
+  },
+  spatialCoverage: {
+    "@type": "Place",
+    name: place || market.regionLabel,
+  },
+  ...(verified ? { dateModified: verified } : {}),
+  ...(heroImageLd ? { primaryImageOfPage: heroImageLd, image: heroImageLd } : {}),
+  ...(itemList ? { mainEntity: { "@id": `${origin}${path}#itemlist` } } : {}),
 };
 ---
 
@@ -66,7 +124,9 @@ const articleLd = {
   canonicalPath={path}
   ogType="article"
   ogImage={socialSrc}
-  jsonLd={[articleLd, itemList].filter(Boolean)}
+  ogImageWidth={socialDimensions?.width}
+  ogImageHeight={socialDimensions?.height}
+  jsonLd={[guidePageLd, itemList].filter(Boolean)}
 >
   <article class="guide-wrap wrap">
     <p class="eyebrow">{market.name}</p>
@@ -75,7 +135,7 @@ const articleLd = {
     <p class="guide-meta">
       {place && <span>{place}</span>}
       {entry.data.entry_count ? <span> · {entry.data.entry_count} listings</span> : null}
-      {verified ? <span> · Last verified {verified}</span> : null}
+      {verified ? <span> · Listings checked on {verified}</span> : null}
     </p>
     {
       heroSrc && (
@@ -83,6 +143,8 @@ const articleLd = {
           class="guide-hero-image"
           src={heroSrc}
           alt={entry.data.hero_image_alt || entry.data.title}
+          width={heroDimensions?.width}
+          height={heroDimensions?.height}
         />
       )
     }

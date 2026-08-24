@@ -22,6 +22,15 @@ const optionalString = z
   .optional()
   .transform((value) => (value == null ? "" : value));
 
+const optionalPositiveInt = z
+  .union([z.number(), z.string(), z.null()])
+  .optional()
+  .transform((value) => {
+    if (value == null || value === "") return undefined;
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+  });
+
 /**
  * Schema derived from the actual frontmatter in
  * newsletter-platform/markets/<id>/content/*.md (28 files).
@@ -52,6 +61,7 @@ const guides = defineCollection({
     min_dates: z.number(),
     generated: dateish,
     last_verified: lastVerified,
+    verified_on: lastVerified,
     gated: z.boolean(),
     entry_count: z.number(),
     location_count: z.number(),
@@ -59,6 +69,8 @@ const guides = defineCollection({
     archetype: z.string().optional(),
     hero_image: z.string().optional(),
     social_image: z.string().optional(),
+    hero_image_width: optionalPositiveInt,
+    hero_image_height: optionalPositiveInt,
     hero_image_alt: z.string().optional(),
     social_image_alt: z.string().optional(),
   }),
