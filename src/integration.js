@@ -25,6 +25,7 @@ export default function newsletterTheme() {
 
         const routes = [
           { pattern: "/", entrypoint: page("index.astro") },
+          { pattern: "/about", entrypoint: page("about.astro") },
           { pattern: "/subscribe", entrypoint: page("subscribe.astro") },
           { pattern: "/[base]", entrypoint: page("[base]/index.astro") },
           {

@@ -343,7 +343,8 @@ body.d-a .tile strong {
   margin-bottom: 8px;
 }
 
-body.d-a .subscribe-page {
+body.d-a .subscribe-page,
+body.d-a .about-page {
   padding: 32px 0 64px;
 }
 
@@ -366,6 +367,44 @@ body.d-a .quick-links {
 
 body.d-a .quick-links a {
   color: var(--invert-fg);
+}
+
+body.d-a .about-page .panel {
+  max-width: var(--read);
+}
+
+body.d-a .about-facts {
+  display: grid;
+  gap: 1px;
+  margin: 28px 0;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+body.d-a .about-facts p {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--paper);
+}
+
+body.d-a .about-facts strong,
+body.d-a .about-copy h2 {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+body.d-a .about-copy h2 {
+  margin: 28px 0 8px;
+}
+
+body.d-a .about-copy p {
+  margin: 0;
+  font-size: 17px;
 }
 
 @media (min-width: 880px) {

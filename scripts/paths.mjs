@@ -135,6 +135,7 @@ export function walkPublicFiles() {
 export function astroGeneratedHtml(market = getMarket()) {
   const skip = new Set([
     "index.html",
+    "about/index.html",
     "subscribe/index.html",
     "sitemap.xml",
     "robots.txt",

@@ -1,0 +1,74 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getMarket, siteUrl } from "../lib/market.js";
+
+const market = getMarket();
+const origin = siteUrl(market);
+const canonicalPath = "/about";
+const publisherLine = `Mike Naylor, ${market.name}`;
+const description = `About ${market.name}, published by Mike Naylor and Signal17.`;
+
+const aboutPageLd = {
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "@id": `${origin}${canonicalPath}#webpage`,
+  url: `${origin}${canonicalPath}`,
+  name: `About ${market.name}`,
+  description,
+  inLanguage: "en",
+  isAccessibleForFree: true,
+  publisher: { "@id": `${origin}/#organization` },
+  isPartOf: { "@id": `${origin}/#website` },
+  author: {
+    "@type": "Person",
+    name: "Mike Naylor",
+  },
+  accountablePerson: {
+    "@type": "Person",
+    name: "Mike Naylor",
+  },
+};
+---
+
+<BaseLayout
+  title={`About — ${market.name}`}
+  description={description}
+  canonicalPath={canonicalPath}
+  jsonLd={aboutPageLd}
+>
+  <main class="about-page wrap">
+    <section class="panel">
+      <p class="eyebrow">{market.regionLabel}</p>
+      <h1>About {market.name}</h1>
+      <p class="dek">
+        {market.name} is a local guide and newsletter for {market.regionLabel}.
+      </p>
+
+      <div class="about-facts" aria-label="Publication details">
+        <p>
+          <strong>Publisher:</strong>
+          <span>{publisherLine}</span>
+        </p>
+        <p>
+          <strong>Publishing Entity:</strong>
+          <span>Signal17</span>
+        </p>
+      </div>
+
+      <div class="about-copy">
+        <h2>Where the data comes from</h2>
+        <p>
+          Listings are collected from venues' and organisers' own published calendars.
+          Every guide links to each listing's official source.
+        </p>
+
+        <h2>Listing checks</h2>
+        <p>
+          Automated collection runs daily, with deeper weekly newsletter review; guide
+          listings are rechecked when pages are generated or refreshed. Readers should
+          confirm details with the official source before going.
+        </p>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

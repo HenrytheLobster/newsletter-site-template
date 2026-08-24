@@ -379,7 +379,8 @@ body.d-b .site-footer a {
 }
 
 body.d-b .guides-index,
-body.d-b .subscribe-page {
+body.d-b .subscribe-page,
+body.d-b .about-page {
   padding: 24px 0 56px;
 }
 
@@ -410,6 +411,47 @@ body.d-b .quick-links {
   display: grid;
   gap: 8px;
   margin-top: 12px;
+}
+
+body.d-b .about-page .panel {
+  max-width: var(--read);
+  border-top: 3px solid var(--ink);
+  border-bottom: 1px solid var(--line);
+  padding: 24px 0 32px;
+}
+
+body.d-b .about-facts {
+  display: grid;
+  gap: 0;
+  margin: 24px 0;
+  border-top: 1px solid var(--line);
+}
+
+body.d-b .about-facts p {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+body.d-b .about-facts strong,
+body.d-b .about-copy h2 {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+body.d-b .about-copy h2 {
+  margin: 24px 0 8px;
+}
+
+body.d-b .about-copy p {
+  margin: 0;
+  font-size: 17px;
 }
 
 @media (min-width: 880px) {

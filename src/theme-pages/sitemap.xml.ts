@@ -12,6 +12,7 @@ export const GET: APIRoute = async () => {
 
   const urls = new Set<string>([
     `${origin}/`,
+    `${origin}/about`,
     `${origin}/subscribe`,
     `${origin}${guidesIndexPath(market)}`,
     `${origin}/issues`,
