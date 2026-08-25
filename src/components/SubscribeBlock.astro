@@ -8,6 +8,7 @@ const {
   body = market.home.subscribeBody,
   kit = market.kit,
   compact = false,
+  embed = true,
 } = Astro.props;
 
 const uid = kit?.uid || market.kit.uid;
@@ -23,11 +24,23 @@ const src = kit?.src || market.kit.src;
 >
   {heading ? <h2>{heading}</h2> : null}
   {body ? <p>{body}</p> : null}
-  <div class:list={["embed-shell", variant === "light" && "embed-shell--light"]}>
-    <script is:inline async data-uid={uid} src={src}></script>
-  </div>
-  <p class="signup-note">
-    Subscriptions are handled by Kit. You'll confirm your address if Kit asks for it.
-    Free. Unsubscribe in one click.
-  </p>
+  {
+    embed ? (
+      <>
+        <div class:list={["embed-shell", variant === "light" && "embed-shell--light"]}>
+          <script is:inline async data-uid={uid} src={src}></script>
+        </div>
+        <p class="signup-note">
+          Subscriptions are handled by Kit. You'll confirm your address if Kit asks for it.
+          Free. Unsubscribe in one click.
+        </p>
+      </>
+    ) : (
+      <p>
+        <a class={variant === "light" ? "button" : "button button-invert"} href="/subscribe">
+          Subscribe
+        </a>
+      </p>
+    )
+  }
 </div>

@@ -1,11 +1,25 @@
 /* Issue pages: archive list + email canvas isolation. */
 
 .issue-page {
+  display: grid;
+  justify-items: center;
+  width: min(var(--read, 760px), calc(100% - 32px));
+  margin-inline: auto;
   padding: 8px 0 24px;
 }
 
 .issue-archive {
+  width: min(var(--read, 760px), calc(100% - 32px));
+  margin-inline: auto;
   padding: 8px 0 64px;
+}
+
+.archive-hero-image {
+  display: block;
+  width: min(100%, 520px);
+  max-height: 280px;
+  margin: 20px auto 24px;
+  object-fit: contain;
 }
 
 .issue-list {
@@ -36,7 +50,7 @@
   Site designs style `body.d-* h1` and `body.d-* a` globally. Revert those
   element rules inside the email canvas so the issue's inline styles (and
   any scoped <style>) own the look. Specificity beats body.d-* h1 (0,1,2).
-  Issue CSS is prefixed `html body .issue-body.issue-body …` so it still
+  Issue CSS is prefixed `html body .issue-body.issue-body ...` so it still
   wins over this revert.
 */
 body.d-a .issue-body :is(
@@ -64,6 +78,7 @@ body.d-c .issue-body a:focus-visible {
 }
 
 .issue-body {
+  width: min(100%, var(--read, 760px));
   overflow-x: auto;
 }
 

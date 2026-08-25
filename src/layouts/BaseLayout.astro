@@ -73,6 +73,7 @@ const c = market.colors;
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {market.favicon && <link rel="icon" type="image/png" href={market.favicon} />}
     <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={market.name} />
     <meta property="og:url" content={canonical} />

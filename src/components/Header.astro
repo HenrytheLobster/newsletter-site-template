@@ -6,6 +6,7 @@ const market = getMarket();
 const design = getDesignId();
 const guidesHref = guidesIndexPath(market);
 const { current = "" } = Astro.props;
+const logo = market.logo || null;
 
 const links = [
   { href: "/", label: market.nav.home },
@@ -38,7 +39,10 @@ function isCurrent(href: string) {
   design === "a" && (
     <header class="masthead">
       <div class="wrap masthead-inner">
-        <a class="brand" href="/">{market.name}</a>
+        <a class="brand" href="/">
+          {logo && <img class="brand-logo" src={logo.src} alt="" width={logo.width || 64} height={logo.height || 64} />}
+          <span>{market.name}</span>
+        </a>
         <nav aria-label="Primary">
           {links.map((link) => (
             <a
@@ -60,7 +64,10 @@ function isCurrent(href: string) {
     <header class="masthead">
       <div class="masthead-bar">
         <div class="wrap masthead-brand">
-          <a class="brand" href="/">{market.name}</a>
+          <a class="brand" href="/">
+            {logo && <img class="brand-logo" src={logo.src} alt="" width={logo.width || 64} height={logo.height || 64} />}
+            <span>{market.name}</span>
+          </a>
           <p class="masthead-region">{market.home.eyebrow}</p>
         </div>
       </div>
@@ -81,7 +88,10 @@ function isCurrent(href: string) {
   design === "c" && (
     <header class="masthead">
       <div class="wrap masthead-inner">
-        <a class="brand" href="/">{market.name}</a>
+        <a class="brand" href="/">
+          {logo && <img class="brand-logo" src={logo.src} alt="" width={logo.width || 64} height={logo.height || 64} />}
+          <span>{market.name}</span>
+        </a>
         <nav aria-label="Primary">
           {links.map((link) => (
             <a href={link.href} aria-current={isCurrent(link.href) ? "page" : undefined}>

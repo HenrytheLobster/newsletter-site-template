@@ -16,14 +16,14 @@ const market = getMarket();
         <p class="eyebrow">{market.home.eyebrow}</p>
         <h1>Get the next issue.</h1>
         <p class="dek">{market.home.dek}</p>
-        <div class="points">
-          {market.home.promises.slice(0, 3).map((item) => <div>{item}</div>)}
-        </div>
+        <ul class="points">
+          {market.home.promises.slice(0, 3).map((item) => <li>{item}</li>)}
+        </ul>
       </div>
       <aside class="card">
         <h2>Subscribe</h2>
         <p>{market.home.subscribeBody}</p>
-        <div class="embed-shell">
+        <div class="embed-shell embed-shell--light">
           <script is:inline async data-uid={market.kit.uid} src={market.kit.src}></script>
         </div>
         <p class="signup-note">

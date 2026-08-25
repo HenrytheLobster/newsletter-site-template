@@ -6,6 +6,7 @@ import { formatDate } from "../../lib/guides.js";
 
 const market = getMarket();
 const issues = loadIssueManifest();
+const archiveImage = market.archiveImage || market.logo?.src || market.ogImage;
 ---
 
 <BaseLayout
@@ -16,10 +17,9 @@ const issues = loadIssueManifest();
   <div class="wrap issue-archive" id="page-title">
     <p class="eyebrow">{market.name} archive</p>
     <h1>Past issues</h1>
+    {archiveImage && <img class="archive-hero-image" src={archiveImage} alt="" width="960" height="420" />}
     <p class="dek">
-      Every weekly email, newest first.
-      {" "}
-      <a href="/issues/latest.html">This week's issue</a>
+      Are you looking for <a href="/issues/latest.html">this week's issue?</a>
     </p>
     {
       issues.length === 0 ? (

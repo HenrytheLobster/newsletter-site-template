@@ -45,7 +45,7 @@ const calCaption = listings.kind === "events"
         }
       </div>
       <aside class="signup-panel" aria-label="Subscribe">
-        <SubscribeBlock />
+        <SubscribeBlock embed={false} />
       </aside>
     </div>
   </section>
@@ -116,7 +116,7 @@ const calCaption = listings.kind === "events"
               {item.image && <img src={item.image} alt="" width="400" height="220" />}
               <strong>{item.title}</strong>
               <p>{item.description}</p>
-              <a href={item.href}>Open the guide</a>
+              <a class="button" href={item.href}>Open the guide</a>
             </article>
           ))}
         </div>
@@ -126,7 +126,7 @@ const calCaption = listings.kind === "events"
           </a>
           {issues.length > 0 && (
             <a class="button-secondary" href="/issues/">
-              Issue archive
+              Past issues
             </a>
           )}
         </p>
