@@ -1,5 +1,5 @@
 /**
- * Catalog of all three markets. Used by:
+ * Catalog of all four markets. Used by:
  *   - template preview builds (`MARKET=alexandria|newport|wasatch`)
  *   - bleed.mjs, which must know every foreign name/domain/GA/Kit token
  *
@@ -376,6 +376,61 @@ export const MARKETS = {
       subscribe: "Subscribe",
     },
   },
+
+  stgeorge: {
+    id: "stgeorge",
+    name: "Dixie's Digest",
+    shortName: "Dixie",
+    domain: "dixiesdigest.com",
+    regionLabel: "St. George & Washington County",
+    timezone: "America/Denver",
+    tagline:
+      "A short weekly email for Greater Zion: the events, openings, and local notes worth leaving the house for.",
+    footer:
+      "Dixie's Digest - a short weekly email for Greater Zion folks who want the useful parts without digging through ten different calendars.",
+    guidesBasePath: "guides",
+    siteRepo: "/Volumes/SSD/Projects/newsletter-sites/dixiesdigest-site",
+    contentDir:
+      "/Volumes/SSD/Projects/newsletter-platform/markets/stgeorge/content",
+    colors: {
+      ivory: "#f6efe0",
+      paper: "#fffaf0",
+      stage: "#efe6d2",
+      border: "#c9b89a",
+      blue: "#1e1714",
+      steel: "#6e2434",
+      iron: "#1e1714",
+    },
+    kit: {
+      account: "",
+      uid: "",
+      src: "",
+    },
+    analyticsId: "",
+    ogImage: "/images/hero.jpg",
+    home: {
+      eyebrow: "St. George & Washington County",
+      headline: "A weekly email of things to do around Greater Zion.",
+      dek: "One short email every week with the events, openings, and local notes actually worth your time, so you spend less time hunting and more time out the door.",
+      promises: [
+        "The good stuff, hand-picked, not every event in the county.",
+        "Real notes from St. George, Washington, Hurricane, Ivins, Santa Clara, and the Zion gateway towns.",
+        "One tap to this week's issue or anything in the archive.",
+        "One email a week. No filler, no inbox clutter.",
+      ],
+      subscribeHeading: "Get it every week",
+      subscribeBody: "Free, one email a week, unsubscribe in one click.",
+    },
+    featuredLegacy: [],
+    leadMagnets: [],
+    nav: {
+      home: "Home",
+      issue: "This week's issue",
+      guides: "Guides",
+      archive: "Past Issues",
+      subscribe: "Subscribe",
+    },
+  },
 };
 
 export const MARKET_IDS = Object.keys(MARKETS);
@@ -424,7 +479,7 @@ export function foreignIdentifiers(currentId) {
       { kind: "domain", value: m.domain },
       { kind: "analyticsId", value: m.analyticsId },
       { kind: "kitUid", value: m.kit.uid },
-      { kind: "kitHost", value: `${m.kit.account}.kit.com` },
-    ];
+      { kind: "kitHost", value: m.kit.account ? `${m.kit.account}.kit.com` : "" },
+    ].filter((item) => item.value);
   });
 }

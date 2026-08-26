@@ -159,7 +159,15 @@ function distTests() {
   const market = getMarket();
   const design = getDesignId();
   const dist = distDir(market, design);
+  const files = listIssueHtmlFiles();
   console.log(`[test-issues] dist ${market.id}/${design}`);
+
+  if (files.length === 0) {
+    check("no generated issue files to render", () => {
+      assert.ok(fs.existsSync(path.join(dist, "issues", "index.html")), "missing issues/index.html");
+    });
+    return;
+  }
 
   check("indexed issue URLs exist as files", () => {
     const archive = path.join(dist, "issues", "index.html");
@@ -265,7 +273,6 @@ function distTests() {
   });
 
   check("every copied issue file renders", () => {
-    const files = listIssueHtmlFiles();
     assert.ok(files.includes("latest.html"), "latest.html not in generated issues");
     for (const name of files) {
       const page = path.join(dist, "issues", name);

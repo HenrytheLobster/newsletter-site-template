@@ -33,9 +33,11 @@ const bodyClass = issueBodyClass(issue.bodyClass);
   canonicalPath={canonicalPath}
 >
   <main class="issue-page">
-    <article class={bodyClass} id="page-title" style={issue.bodyStyle || undefined}>
-      {issue.scopedCss ? <style is:inline set:html={issue.scopedCss} /> : null}
-      <Fragment set:html={issue.content} />
-    </article>
+    <div class="issue-shell">
+      <article class={bodyClass} id="page-title" style={issue.bodyStyle || undefined}>
+        {issue.scopedCss ? <style is:inline set:html={issue.scopedCss} /> : null}
+        <Fragment set:html={issue.content} />
+      </article>
+    </div>
   </main>
 </BaseLayout>
