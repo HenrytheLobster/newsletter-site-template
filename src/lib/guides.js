@@ -50,7 +50,10 @@ export function formatDate(value) {
  * Related guides, computed at build time.
  * Fill from same place, then same archetype, then same topic family.
  */
-export function relatedGuides(current, all, limit = 4) {
+const RECIPROCITY_WINDOW = 5;
+const inboundCache = new WeakMap();
+
+function rankedPicks(current, all, limit) {
   const currentSlug = current.data.slug;
   const others = all.filter((g) => g.data.slug !== currentSlug);
   const seen = new Set();
@@ -82,6 +85,47 @@ export function relatedGuides(current, all, limit = 4) {
     }
   }
   return out;
+}
+
+/** How many pages the ranked pass alone would point at each guide. */
+function inboundCounts(all, limit) {
+  let cached = inboundCache.get(all);
+  if (cached) return cached;
+  const counts = new Map(all.map((g) => [g.data.slug, 0]));
+  for (const g of all) {
+    for (const pick of rankedPicks(g, all, limit)) {
+      counts.set(pick.data.slug, (counts.get(pick.data.slug) || 0) + 1);
+    }
+  }
+  inboundCache.set(all, counts);
+  return counts;
+}
+
+export function relatedGuides(current, all, limit = 4) {
+  // The ranked pass decides who a page *gives* links to, and nothing in it
+  // decides who *receives* them. Large families answer every bucket before
+  // a small one is reached, so on 2026-08-31 two NOVA guides sat at zero
+  // inbound while structurally identical DC pages had eighteen. Ranking is
+  // right for the first slots; the last one is reserved to fix that.
+  const core = rankedPicks(current, all, Math.max(0, limit - 1));
+  const taken = new Set([current.data.slug, ...core.map((g) => g.data.slug)]);
+  const counts = inboundCounts(all, Math.max(0, limit - 1));
+
+  const starved = all
+    .filter((g) => !taken.has(g.data.slug))
+    .sort(
+      (a, b) =>
+        (counts.get(a.data.slug) ?? 0) - (counts.get(b.data.slug) ?? 0) ||
+        a.data.slug.localeCompare(b.data.slug)
+    );
+  if (!starved.length) return core;
+
+  // Spread the reserved slot across the few least-linked pages rather than
+  // piling every page's spare link onto one. Indexed by where this page
+  // sits in the collection, so a build is reproducible.
+  const window = starved.slice(0, RECIPROCITY_WINDOW);
+  const seat = Math.max(0, all.findIndex((g) => g.data.slug === current.data.slug));
+  return [...core, window[seat % window.length]];
 }
 
 export function venueHeadings(body) {
