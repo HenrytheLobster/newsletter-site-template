@@ -175,3 +175,53 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Subscribe gate ---------------------------------------------------------
+   Only the first paragraph shows until someone subscribes. The rest stays
+   in the document -- these pages are the organic-search engine, and
+   stripping the body server-side would trade the ranking for the signup.
+   Trivially bypassed by anyone who opens devtools, which is fine: the ask
+   is a courtesy on a free product, not a paywall. */
+.guide-body.is-gated > * {
+  display: none;
+}
+
+.guide-body.is-gated > p:first-of-type {
+  display: block;
+}
+
+.guide-body.is-gated {
+  position: relative;
+  padding-bottom: 2.5rem;
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+}
+
+.guide-gate-cta {
+  margin: 0 0 2.5rem;
+  padding: 1.75rem;
+  border: 1px solid var(--border, #c9b89a);
+  border-radius: 10px;
+  background: var(--stage, #efe6d2);
+}
+
+.guide-gate-cta h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.guide-gate-cta > p {
+  margin: 0 0 1rem;
+  max-width: 46ch;
+}
+
+.guide-gate-note {
+  margin: 0.85rem 0 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.guide-gate-cta[hidden] {
+  display: none;
+}

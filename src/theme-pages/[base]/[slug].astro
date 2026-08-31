@@ -148,9 +148,23 @@ const guidePageLd = {
         />
       )
     }
-    <div class="guide-body">
+    <div class="guide-body" data-guide-gate>
       <Content />
     </div>
+    <aside class="guide-gate-cta" data-guide-gate-cta hidden>
+      <h2>Keep reading — it's free.</h2>
+      <p>
+        The rest of this guide is yours when you join {market.name}. One short
+        email a week, and you can unsubscribe in one click.
+      </p>
+      <p>
+        <a class="button" href="/subscribe">Subscribe and keep reading</a>
+      </p>
+      <p class="guide-gate-note">
+        Already subscribed? <a href="?subscribed=1">Show me the whole guide.</a>
+        The signup form at the foot of this page unlocks it too.
+      </p>
+    </aside>
     <p class="guide-meta">
       Compiled from each organisation's own public calendar. Details change — confirm
       before you go.
@@ -163,4 +177,50 @@ const guidePageLd = {
       <SubscribeBlock variant="light" />
     </div>
   </article>
+
+<script is:inline>
+  // The guide text stays in the document and only its visibility changes.
+  // These pages exist to rank, so removing the body server-side would give
+  // away the thing the gate is meant to earn from.
+  (function () {
+    var body = document.querySelector("[data-guide-gate]");
+    var cta = document.querySelector("[data-guide-gate-cta]");
+    if (!body || !cta) return;
+    var KEY = "guide_unlocked";
+
+    function unlock(remember) {
+      body.classList.add("is-unlocked");
+      cta.hidden = true;
+      if (remember) {
+        try { localStorage.setItem(KEY, "1"); } catch (e) {}
+      }
+    }
+
+    var already = false;
+    try { already = localStorage.getItem(KEY) === "1"; } catch (e) {}
+    var param = new URLSearchParams(window.location.search).get("subscribed");
+    var fromSignup = param !== null && param !== "0";
+
+    if (already) {
+      unlock(false);
+      return;
+    }
+    if (fromSignup) {
+      unlock(true);
+      try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
+      return;
+    }
+
+    // Locked: hide the tail, show the ask.
+    body.classList.add("is-gated");
+    cta.hidden = false;
+
+    // Kit replaces the form with its success message in place rather than
+    // navigating, so a redirect is not the only way through.
+    document.addEventListener("submit", function (event) {
+      if (!event.target.classList.contains("formkit-form")) return;
+      setTimeout(function () { unlock(true); }, 1200);
+    }, true);
+  })();
+</script>
 </BaseLayout>
