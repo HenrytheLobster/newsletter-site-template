@@ -1,0 +1,57 @@
+---
+/**
+ * The lead magnet index at /guides/.
+ *
+ * These are the only things on the site that are actually guides -- a map,
+ * a calendar, a registry you download and use. The SEO posts moved to
+ * /articles/ on 2026-09-01 and took the old /guides/ index with them, which
+ * left the lead magnets with no page of their own and no nav entry.
+ *
+ * A rest param rather than a plain route so a market with no lead magnets
+ * (dixiesdigest today) emits no page at all: an empty index would still
+ * reach the sitemap, and a nav link to nothing is worse than no link.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getMarket } from "../../lib/market.js";
+import { leadMagnetGuides } from "../../lib/guides.js";
+
+export function getStaticPaths() {
+  if (!leadMagnetGuides(getMarket()).length) return [];
+  return [{ params: { page: undefined } }];
+}
+
+const market = getMarket();
+const guides = leadMagnetGuides(market);
+---
+
+<BaseLayout
+  title={`Guides — ${market.name}`}
+  description={`Free downloadable guides from ${market.name} — maps, calendars and shortlists worth keeping.`}
+  canonicalPath="/guides/"
+>
+  <div class="wrap guides-index">
+    <p class="eyebrow">{market.regionLabel}</p>
+    <h1>Guides</h1>
+    <p class="dek">
+      The ones worth keeping — maps, calendars and shortlists you can pull up
+      when you actually need them.
+    </p>
+
+    <div class="tiles tiles-2" aria-label="Guides">
+      {
+        guides.map((guide) => (
+          <article class="tile">
+            {guide.image && <img src={guide.image} alt="" width="400" height="220" />}
+            <strong>{guide.title}</strong>
+            <p>{guide.description}</p>
+            <p>
+              <a class="button" href={guide.href} aria-label={`Open: ${guide.title}`}>
+                Open the guide
+              </a>
+            </p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

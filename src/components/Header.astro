@@ -1,5 +1,6 @@
 ---
 import { getMarket, guidesIndexPath } from "../lib/market.js";
+import { leadMagnetGuides } from "../lib/guides.js";
 import { getDesignId } from "../lib/design.js";
 
 const market = getMarket();
@@ -7,11 +8,14 @@ const design = getDesignId();
 const guidesHref = guidesIndexPath(market);
 const { current = "" } = Astro.props;
 const logo = market.logo || null;
+const hasLeadMagnets = leadMagnetGuides(market).length > 0;
 
 const links = [
   { href: "/", label: market.nav.home },
   { href: "/issues/latest.html", label: market.nav.issue },
   { href: guidesHref, label: market.nav.guides },
+  // Only where there is a lead magnet index to point at.
+  ...(hasLeadMagnets ? [{ href: "/guides/", label: "Guides" }] : []),
   { href: "/issues/", label: market.nav.archive },
   { href: "/subscribe", label: market.nav.subscribe },
 ];

@@ -321,3 +321,18 @@ export function toCard(market, entry) {
     generated: formatDate(entry.data.generated),
   };
 }
+
+/**
+ * The lead magnets — the downloadable guides that live at /guides/.
+ *
+ * Two overlapping lists exist in market config: `leadMagnets` is the pure
+ * /guides/ set, while `featuredLegacy` is what the home page promotes and
+ * can include pages that are not guides at all (NOVA lists /fireworks-dc).
+ * Prefer the former, fall back to the latter, and keep /guides/ paths only.
+ */
+export function leadMagnetGuides(market) {
+  const source = market?.leadMagnets?.length
+    ? market.leadMagnets
+    : market?.featuredLegacy || [];
+  return source.filter((item) => item?.href?.startsWith("/guides/"));
+}

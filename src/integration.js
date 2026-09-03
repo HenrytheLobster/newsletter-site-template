@@ -27,6 +27,10 @@ export default function newsletterTheme() {
           { pattern: "/", entrypoint: page("index.astro") },
           { pattern: "/about", entrypoint: page("about.astro") },
           { pattern: "/subscribe", entrypoint: page("subscribe.astro") },
+          // Literal /guides/, not `[base]`: the lead magnet hrefs are
+          // hardcoded to it in each market config, and `[base]` is now the
+          // articles path. Emits nothing for a market with no lead magnets.
+          { pattern: "/guides/[...page]", entrypoint: page("guides/[...page].astro") },
           { pattern: "/[base]", entrypoint: page("[base]/index.astro") },
           {
             pattern: "/[base]/[slug]",

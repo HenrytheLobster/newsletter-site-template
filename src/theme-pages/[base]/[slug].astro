@@ -28,6 +28,12 @@ const path = guidePath(market, entry.data.slug);
 const origin = siteUrl(market);
 const verified = formatDate(entry.data.last_verified || entry.data.verified_on);
 const generated = formatDate(entry.data.generated);
+// One date, once. Most pages never get a re-verification pass, so
+// `last_verified` is null and the build date is the honest answer.
+const checked = verified || generated;
+// ISO stays in the JSON-LD; the reader gets the short form a blog would use.
+const [ckY, ckM, ckD] = checked ? checked.slice(0, 10).split("-") : [];
+const checkedLabel = ckY ? `${Number(ckM)}/${Number(ckD)}/${ckY.slice(2)}` : "";
 const listings = guideListings(entry.body);
 const place = placeLabel(entry.data.place);
 
@@ -135,7 +141,7 @@ const guidePageLd = {
     <p class="guide-meta">
       {place && <span>{place}</span>}
       {entry.data.entry_count ? <span> · {entry.data.entry_count} listings</span> : null}
-      {verified ? <span> · Listings checked on {verified}</span> : null}
+      {checkedLabel ? <span> · Checked {checkedLabel}</span> : null}
     </p>
     {
       heroSrc && (
@@ -154,24 +160,17 @@ const guidePageLd = {
     <aside class="guide-gate-cta" data-guide-gate-cta hidden>
       <h2>Keep reading — it's free.</h2>
       <p>
-        The rest of this guide is yours when you join {market.name}. One short
+        The rest of this article is yours when you join {market.name}. One short
         email a week, and you can unsubscribe in one click.
       </p>
       <p>
         <a class="button" href="/subscribe">Subscribe and keep reading</a>
       </p>
       <p class="guide-gate-note">
-        Already subscribed? <a href="?subscribed=1">Show me the whole guide.</a>
+        Already subscribed? <a href="?subscribed=1">Show me the whole article.</a>
         The signup form at the foot of this page unlocks it too.
       </p>
     </aside>
-    <p class="guide-meta">
-      Compiled from each organisation's own public calendar. Details change — confirm
-      before you go.
-      {generated ? ` Last updated: ${generated}.` : ""}
-      {verified ? ` Last verified: ${verified}.` : ""}
-      {" "}From {market.name}.
-    </p>
     <RelatedGuides current={entry} all={all} />
     <div class="tile">
       <SubscribeBlock variant="light" />

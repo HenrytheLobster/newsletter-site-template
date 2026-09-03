@@ -1,10 +1,12 @@
 ---
 import { getMarket, guidesIndexPath } from "../lib/market.js";
+import { leadMagnetGuides } from "../lib/guides.js";
 import { getDesignId } from "../lib/design.js";
 
 const market = getMarket();
 const design = getDesignId();
 const guidesHref = guidesIndexPath(market);
+const hasLeadMagnets = leadMagnetGuides(market).length > 0;
 ---
 
 {
@@ -19,6 +21,7 @@ const guidesHref = guidesIndexPath(market);
           <p class="footer-label">Browse</p>
           <a href="/">{market.nav.home}</a>
           <a href={guidesHref}>{market.nav.guides}</a>
+          {hasLeadMagnets ? <a href="/guides/">Guides</a> : null}
           <a href="/about">About</a>
           <a href="/subscribe">{market.nav.subscribe}</a>
         </nav>
@@ -40,6 +43,7 @@ const guidesHref = guidesIndexPath(market);
           <a href="/">{market.nav.home}</a>
           <a href="/issues/latest.html">{market.nav.issue}</a>
           <a href={guidesHref}>{market.nav.guides}</a>
+          {hasLeadMagnets ? <a href="/guides/">Guides</a> : null}
           <a href="/issues/">{market.nav.archive}</a>
           <a href="/about">About</a>
           <a href="/subscribe">{market.nav.subscribe}</a>

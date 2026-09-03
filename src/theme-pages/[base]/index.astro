@@ -22,23 +22,24 @@ const path = guidesIndexPath(market);
 ---
 
 <BaseLayout
-  title={`Guides — ${market.name}`}
-  description={`Local roundups and guides from ${market.name}.`}
+  title={`Articles — ${market.name}`}
+  description={`Local writing from ${market.name} — where to go, what it costs, when to turn up.`}
   canonicalPath={path}
 >
   <div class="wrap guides-index">
     <p class="eyebrow">{market.regionLabel}</p>
-    <h1>Guides</h1>
+    <h1>Articles</h1>
     <p class="dek">
-      Local roundups compiled from official calendars. Each listing links back to
-      the source so you can confirm before you go.
+      Where to go and when to turn up, written up one subject at a time.
     </p>
 
     {
       market.featuredLegacy.length > 0 && (
         <section class="guide-category" aria-labelledby="featured-guides-heading">
-          <h2 class="section-heading" id="featured-guides-heading">Featured</h2>
-          <div class="tiles" aria-label="Featured guides">
+          {/* The lead magnets. These are the only things on the site that are
+              genuinely guides, and they keep both the name and /guides/. */}
+          <h2 class="section-heading" id="featured-guides-heading">Free guides</h2>
+          <div class="tiles" aria-label="Free guides">
             {market.featuredLegacy.map((item) => (
               <article class="tile">
                 {item.image && <img src={item.image} alt="" width="400" height="220" />}
@@ -52,13 +53,13 @@ const path = guidesIndexPath(market);
       )
     }
 
-    <section class="guide-category" aria-labelledby="all-roundups-heading">
-      <h2 class="section-heading" id="all-roundups-heading">All roundups</h2>
+    <section class="guide-category" aria-labelledby="all-articles-heading">
+      <h2 class="section-heading" id="all-articles-heading">All articles</h2>
       {
         cards.length === 0 ? (
-          <p>No roundup guides in this market yet.</p>
+          <p>No articles in this market yet.</p>
         ) : (
-          <div class="tiles tiles-2" aria-label="Roundup guides">
+          <div class="tiles tiles-2" aria-label="Articles">
             {cards.map((card) => (
               <article class="tile">
                 {card.image && <img src={card.image} alt="" width="400" height="220" />}
@@ -71,7 +72,9 @@ const path = guidesIndexPath(market);
                   </p>
                 )}
                 <p>
-                  <a class="button" href={card.href}>Read the guide</a>
+                  <a class="button" href={card.href} aria-label={`Read: ${card.title}`}>
+                    Read more
+                  </a>
                 </p>
               </article>
             ))}

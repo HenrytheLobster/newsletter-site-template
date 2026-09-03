@@ -109,8 +109,8 @@ const calCaption = listings.kind === "events"
   {
     (featuredLegacy.length > 0 || guideCards.length > 0) && (
       <section class="tiles-section wrap">
-        <p class="section-heading">Local guides</p>
-        <div class="tiles" aria-label="Local guides">
+        <p class="section-heading">Local articles</p>
+        <div class="tiles" aria-label="Local articles">
           {(featuredLegacy.length ? featuredLegacy : guideCards.slice(0, 6)).map((item) => (
             <article class="tile">
               {item.image && <img src={item.image} alt="" width="400" height="220" />}
@@ -122,7 +122,7 @@ const calCaption = listings.kind === "events"
         </div>
         <p class="hero-links">
           <a class="button-secondary" href={guidesIndex}>
-            All guides
+            All articles
           </a>
           {issues.length > 0 && (
             <a class="button-secondary" href="/issues/">
