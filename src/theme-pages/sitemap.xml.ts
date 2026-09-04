@@ -16,8 +16,12 @@ export const GET: APIRoute = async () => {
     `${origin}/subscribe`,
     `${origin}${guidesIndexPath(market)}`,
     `${origin}/issues`,
-    `${origin}/issues/latest`,
   ]);
+
+  // /issues/latest is deliberately NOT advertised. latest.html is a byte
+  // copy of the newest dated issue and now canonicalises to it, so listing
+  // it here would ask Google to crawl a URL that points somewhere else.
+  // The page is still built and still linked from the archive.
 
   // Cloudflare's asset handling 307s /issues/<name>.html to the extensionless
   // form, so the .html URL is not canonical -- advertising it puts a redirect

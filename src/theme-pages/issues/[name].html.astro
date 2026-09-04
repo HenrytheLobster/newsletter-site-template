@@ -1,6 +1,10 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { listIssueHtmlFiles, loadIssuePage } from "../../lib/issues.js";
+import {
+  listIssueHtmlFiles,
+  loadIssueManifest,
+  loadIssuePage,
+} from "../../lib/issues.js";
 import { issueBodyClass } from "../../lib/issue-html.js";
 
 export function getStaticPaths() {
@@ -23,7 +27,17 @@ const issue = loadIssuePage(filename) || {
 // Cloudflare 307s /issues/<name>.html to the extensionless form, so the
 // .html URL is not the one that serves 200. Point the canonical at the
 // same URL the sitemap advertises rather than at a redirect.
-const canonicalPath = `/issues/${filename.replace(/\.html$/, "")}`;
+//
+// latest.html is a byte copy of the newest dated issue, so /issues/latest
+// and /issues/<newest date> render the same page. Canonicalise the copy to
+// the dated original: a self-canonical asks Google to index one issue at
+// two URLs, and /issues/latest changes meaning every week, so it is the
+// wrong URL to accumulate ranking signal.
+const newest = loadIssueManifest()[0];
+const canonicalPath =
+  filename.toLowerCase() === "latest.html" && newest
+    ? `/issues/${newest.file.replace(/\.html$/i, "")}`
+    : `/issues/${filename.replace(/\.html$/, "")}`;
 const bodyClass = issueBodyClass(issue.bodyClass);
 ---
 
